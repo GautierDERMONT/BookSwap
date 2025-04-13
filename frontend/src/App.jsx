@@ -1,31 +1,57 @@
-import Books from './pages/Books';
-import './App.css';
+import React, { useState } from 'react'
+import { Routes, Route } from 'react-router-dom'
+import Header from './components/Header/Header'
+import LoginModal from './components/Header/LoginModal'
+import SignupModal from './components/Header/SignupModal'
+import HomePage from './pages/Home' // Créez cette page
+import BooksPage from './pages/Books' // Créez cette page
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [activeModal, setActiveModal] = useState(null)
+
+  const handleLogin = (credentials) => {
+    console.log('Login attempt:', credentials)
+    setIsAuthenticated(true)
+    setActiveModal(null)
+  }
+
+  const handleSignup = (userData) => {
+    console.log('Signup attempt:', userData)
+    setIsAuthenticated(true)
+    setActiveModal(null)
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* En-tête */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto py-6 px-4">
-          <h1 className="text-3xl font-bold text-gray-900">BookSwap</h1>
-        </div>
-      </header>
+    <div className="app">
+      <Header
+        isAuthenticated={isAuthenticated}
+        onOpenLogin={() => setActiveModal('login')}
+        onOpenSignup={() => setActiveModal('signup')}
+      />
+      
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/books" element={<BooksPage />} />
+      </Routes>
 
-      {/* Contenu principal */}
-      <main className="max-w-7xl mx-auto py-6 px-4">
-        <Books />  {/* Votre composant de catalogue */}
-      </main>
+      {activeModal === 'login' && (
+        <LoginModal
+          onClose={() => setActiveModal(null)}
+          onLogin={handleLogin}
+          onSwitchToSignup={() => setActiveModal('signup')}
+        />
+      )}
 
-      {/* Pied de page */}
-      <footer className="bg-white border-t mt-8">
-        <div className="max-w-7xl mx-auto py-6 px-4">
-          <p className="text-center text-gray-500">
-            © 2023 BookSwap - Plateforme d'échange de livres
-          </p>
-        </div>
-      </footer>
+      {activeModal === 'signup' && (
+        <SignupModal
+          onClose={() => setActiveModal(null)}
+          onSignup={handleSignup}
+          onSwitchToLogin={() => setActiveModal('login')}
+        />
+      )}
     </div>
-  );
+  )
 }
 
-export default App;
+export default App

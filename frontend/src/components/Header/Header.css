@@ -1,0 +1,196 @@
+.app-header {
+    background-color: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 0px 0;
+    border-radius: 12px; /* Bordures arrondies */
+    height: 110px;  /* Ajuste cette valeur pour réduire la hauteur */
+
+
+  }
+  
+  .header-top {
+    display: flex;
+    align-items: center;
+
+    max-width: 1500px;
+   
+    height: 105px;  /* Ajuste cette valeur pour réduire la hauteur */
+
+  }
+  
+  .logo-link {
+    display: flex;
+    align-items: center;
+  }
+  
+  .logo {
+    height: 150px;
+    width: auto;
+  }
+  
+  .search-container {
+    flex: 1;
+    margin: 0 20px;
+  }
+  
+  .search-bar {
+    display: flex;
+    max-width: 300px;
+    margin:left;
+    position: relative;
+  }
+  
+  .search-bar input {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 24px;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.3s ease;
+  }
+  
+  .search-bar input:focus {
+    border-color: #4285f4;
+    box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+  }
+  
+  .search-button {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .search-icon {
+    height: 20px;
+    width: 20px;
+    fill: #5f6368;
+  }
+  
+  .user-actions {
+    display: flex;
+    align-items: center;
+    margin-left: auto; /* Cela pousse l'élément à droite */
+
+  }
+  
+  .auth-button {
+    padding: 8px 16px;
+    margin-left: 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
+  
+  .auth-button.primary {
+    background-color: #4285f4;
+    color: white;
+  }
+  
+  .auth-button.primary:hover {
+    background-color: #3367d6;
+  }
+  
+  .user-menu {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  
+  .menu-button {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: #f1f3f4;
+    border: none;
+    border-radius: 16px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .menu-button:hover {
+    background-color: #e0e0e0;
+  }
+  
+  .plus-icon {
+    margin-right: 4px;
+    font-weight: bold;
+  }
+  
+  .menu-icon {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+  }
+  
+  /* Filtres */
+.filters-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    max-width: 1200px;
+    margin: 10px auto 0;
+    padding: 0 20px;
+}
+  
+  .filter-input-container {
+    position: relative;
+    margin-right: 550px;
+  }
+  
+  .filter-input-container input {
+    padding: 6px 30px 6px 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 16px;
+    font-size: 13px;
+    outline: none;
+    margin-top: -20px;  /* Déplace l'élément de 5px vers le haut */
+
+  }
+  
+  .add-filter-button {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #4285f4;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: -1px;  /* Déplace l'élément de 5px vers le haut */
+
+  }
+  
+  .active-filter {
+    display: flex;
+    align-items: center;
+    padding: 4px 12px;
+    background-color: #e8f0fe;
+    color: #1967d2;
+    border-radius: 16px;
+    font-size: 13px;
+    margin-left: 0; /* Retirer tout espacement à gauche */
+
+  }
+  
+  .remove-filter {
+    margin-left: 6px;
+    background: none;
+    border: none;
+    color: #1967d2;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+  }

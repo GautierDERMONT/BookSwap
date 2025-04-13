@@ -15,4 +15,5 @@ frontend:
 npm install
 npm install react-router-dom axios tailwindcss socket.io-client
 npm install axios react-router-dom socket.io-client
+npm install react-feather
 
