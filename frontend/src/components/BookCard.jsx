@@ -1,25 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './BookCard.css'; // Fichier CSS dédié
 
 export default function BookCard({ book }) {
   const [isFavorite, setIsFavorite] = useState(false);  // Pour gérer l'état du favori
 
+  // 🧠 Check localStorage à l'ouverture
+  useEffect(() => {
+    const storedFavorites = JSON.parse(localStorage.getItem('favorites')) || [];
+    setIsFavorite(storedFavorites.includes(book.id));
+  }, [book.id]);
+
   const handleFavoriteClick = () => {
+    const storedFavorites = JSON.parse(localStorage.getItem('favorites')) || [];
+    let updatedFavorites;
+
+    if (storedFavorites.includes(book.id)) {
+      updatedFavorites = storedFavorites.filter(id => id !== book.id);
+    } else {
+      updatedFavorites = [...storedFavorites, book.id];
+    }
+
+    localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
     setIsFavorite(!isFavorite);
-    console.log(`${book.title} ajouté aux favoris: ${!isFavorite}`);
+    console.log(`${book.title} ${!isFavorite ? 'ajouté à' : 'retiré des'} favoris`);
   };
 
-  // Si l'URL de l'image n'est pas complète, on va compléter avec le chemin de base
-  const imageUrl = book.image_url
-  ? `http://localhost:5001${book.image_url}`
-  : `http://localhost:5001/uploads/${book.image_url}`;
-
+  // ✅ Construction propre de l'image
+  const imageUrl = book.image_url?.startsWith('/uploads')
+    ? `http://localhost:5001${book.image_url}`
+    : `http://localhost:5001/uploads/${book.image_url}`;
 
   return (
     <div className="book-card">
       <div className="book-image-container">
         <img 
-          src={imageUrl} // On utilise ici l'URL modifiée
+          src={imageUrl}
           alt={book.title}
           className="book-image"
         />
