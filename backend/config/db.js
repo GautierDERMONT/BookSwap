@@ -1,10 +1,9 @@
-// backend/config/db.js
-const mysql = require('mysql2/promise'); // Utilise l'interface async/await
+const mysql = require('mysql2/promise');
 
 const pool = mysql.createPool({
   host: 'localhost',
-  user: 'root', // Utilisateur par défaut WAMP
-  password: '', // Mot de passe par défaut (vide)
+  user: 'root',
+  password: '',
   database: 'bookswap',
   waitForConnections: true,
   connectionLimit: 10,
@@ -13,9 +12,9 @@ const pool = mysql.createPool({
 const connectDB = async () => {
   try {
     await pool.query('SELECT 1');
-    console.log('MySQL connected via WAMP...');
-    return pool;
+    console.log('✅ MySQL connecté via WAMP...');
   } catch (err) {
+    console.error('❌ Erreur connexion MySQL :', err);
     throw err;
   }
 };

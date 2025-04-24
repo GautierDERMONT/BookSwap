@@ -8,7 +8,7 @@ router.get('/', async (req, res) => {
   let query = `
     SELECT b.*, u.email as owner_email 
     FROM books b
-    JOIN users u ON b.user_id = u.id
+    JOIN users u ON b.users_id = u.id
     WHERE 1=1
   `;
   const params = [];

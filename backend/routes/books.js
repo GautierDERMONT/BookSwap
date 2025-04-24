@@ -1,77 +1,78 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const Book = require('../models/Book');
+const authenticate = require('../middleware/authenticate');
+
 const router = express.Router();
-const { pool } = require('../config/db');
-const authenticate = require('../middlewares/authenticate');
 
-// GET tous les livres
-router.get('/', async (req, res) => {
-  try {
-    const [books] = await pool.query(`
-      SELECT b.*, u.email as owner_email 
-      FROM books b
-      JOIN users u ON b.user_id = u.id
-    `);
-    res.json(books);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+// Configuration de Multer pour le stockage des images
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, '../uploads'));
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
   }
 });
 
-// GET un livre par ID
-router.get('/:id', async (req, res) => {
-  try {
-    const [books] = await pool.query(`
-      SELECT b.*, u.email as owner_email 
-      FROM books b
-      JOIN users u ON b.user_id = u.id
-      WHERE b.id = ?
-    `, [req.params.id]);
-    
-    if (books.length === 0) {
-      return res.status(404).json({ error: "Book not found" });
+const upload = multer({
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Seules les images sont autorisées'), false);
     }
-    
-    res.json(books[0]);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  },
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB
 });
 
-// POST créer un livre (protégé)
-router.post('/', authenticate, async (req, res) => {
-  const { title, author, condition, description } = req.body;
-  
+// Route pour ajouter un livre
+router.post('/', authenticate, upload.array('images', 3), async (req, res) => {
   try {
-    const [result] = await pool.query(
-      'INSERT INTO books (title, author, condition, description, user_id) VALUES (?, ?, ?, ?, ?)',
-      [title, author, condition, description, req.userId]
-    );
-    
-    const [newBook] = await pool.query('SELECT * FROM books WHERE id = ?', [result.insertId]);
-    res.status(201).json(newBook[0]);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+    console.log('Données reçues:', {
+      body: req.body,
+      files: req.files?.map(f => f.filename),
+      userId: req.userId
+    });
 
-// DELETE supprimer un livre (protégé)
-router.delete('/:id', authenticate, async (req, res) => {
-  try {
-    // Vérifier que le livre appartient à l'utilisateur
-    const [books] = await pool.query('SELECT user_id FROM books WHERE id = ?', [req.params.id]);
-    
-    if (books.length === 0) {
-      return res.status(404).json({ error: "Book not found" });
+    const { title, category, condition, location, description } = req.body;
+
+    // Validation des champs obligatoires
+    if (!title || !category || !condition || !location) {
+      return res.status(400).json({ error: 'Tous les champs obligatoires doivent être remplis' });
     }
-    
-    if (books[0].user_id !== req.userId) {
-      return res.status(403).json({ error: "Not authorized" });
+
+    // Création du livre dans la base de données
+    const bookId = await Book.create({
+      title: title.trim(),
+      category: category.trim(),
+      condition: condition.trim(),
+      location: location.trim(),
+      description: description?.trim() || null
+    }, req.userId);
+
+    // Ajout des images si elles existent
+    if (req.files && req.files.length > 0) {
+      const images = req.files.map(file => ({
+        path: `/uploads/${file.filename}`
+      }));
+      await Book.addImages(bookId, images);
     }
-    
-    await pool.query('DELETE FROM books WHERE id = ?', [req.params.id]);
-    res.json({ message: "Book deleted successfully" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+
+    // Réponse de succès
+    res.status(201).json({
+      success: true,
+      bookId: bookId,
+      message: 'Livre ajouté avec succès'
+    });
+
+  } catch (error) {
+    console.error('Erreur lors de l\'ajout du livre:', error);
+    res.status(500).json({
+      error: error.message || 'Erreur lors de l\'ajout du livre'
+    });
   }
 });
 

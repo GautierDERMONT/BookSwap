@@ -9,13 +9,11 @@ module.exports = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_secret_key');
-    
-    // Vérifier que l'utilisateur existe toujours
     const [users] = await pool.query('SELECT id FROM users WHERE id = ?', [decoded.userId]);
     if (users.length === 0) {
       return res.status(401).json({ error: "Invalid token" });
     }
-    
+
     req.userId = decoded.userId;
     next();
   } catch (err) {

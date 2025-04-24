@@ -1,0 +1,90 @@
+.home-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  
+  .cta-box {
+    background-color: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    width: 100%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+  
+  .cta-text {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+  
+  
+  .cta-main {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-right: 12px;
+  }
+  
+  .cta-sub {
+    font-size: 1.1rem;
+    color: #7f8c8d;
+  }
+  
+  .add-book-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #4285f4;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 24px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .add-book-button:hover {
+    background-color: #3367d6;
+  }
+  
+  .home-content {
+    text-align: left;
+    padding: 1rem 0;
+    max-width: 100%;
+  }
+  
+  .add-book-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #4285f4;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 24px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 1rem;
+  }
+  
+  .add-book-button:hover {
+    background-color: #3367d6;
+  }
+
+  .home-content-standalone {
+    padding: 2rem;
+    text-align: left;
+  }
+  

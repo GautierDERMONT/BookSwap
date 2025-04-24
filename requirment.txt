@@ -5,9 +5,13 @@ npm install
 npm install express pg jsonwebtoken bcryptjs cors multer socket.io
 npm install express cors jsonwebtoken bcryptjs pg socket.io
 npm install dotenv express cors mysql2 jsonwebtoken bcryptjs socket.io
+npm install bcrypt
+npm install express cors morgan multer
+
 
 npm install mysql2
 npm install dotenv
+npm install axios
 
 
 frontend:
