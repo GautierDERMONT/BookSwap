@@ -68,25 +68,33 @@ const AddBook = () => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
-
-    if (!formData.title || !formData.category || !formData.condition || !formData.location) {
-      setError('Veuillez remplir tous les champs obligatoires');
+  
+    // Vérification si tous les champs obligatoires sont remplis
+    if (
+      !formData.title ||
+      !formData.category ||
+      !formData.condition ||
+      !formData.location ||
+      !formData.description ||  // Ajout de la validation pour la description
+      formData.description.trim().length === 0
+    ) {
+      setError('Veuillez remplir la description');
       setIsSubmitting(false);
       return;
     }
-
+  
     try {
       const formDataToSend = new FormData();
       formDataToSend.append('title', formData.title.trim());
       formDataToSend.append('category', formData.category.trim());
       formDataToSend.append('condition', formData.condition.trim());
       formDataToSend.append('location', formData.location.trim());
-      formDataToSend.append('description', formData.description?.trim() || '');
-      
+      formDataToSend.append('description', formData.description.trim());
+  
       images.forEach((image) => {
         formDataToSend.append('images', image);
       });
-
+  
       await addBook(formDataToSend);
       navigate('/', { state: { bookAdded: true } });
       
@@ -97,6 +105,8 @@ const AddBook = () => {
       setIsSubmitting(false);
     }
   };
+  
+  
 
   return (
     <div className="add-book-container">

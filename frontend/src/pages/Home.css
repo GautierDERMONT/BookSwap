@@ -87,4 +87,75 @@
     padding: 2rem;
     text-align: left;
   }
+
+  /* Zone de la carte avec un effet au survol */
+  .book-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+    padding: 20px;
+  }
   
+  /* Style de la carte du livre */
+  .book-card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+  }
+  
+  /* Image du livre */
+  .book-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-bottom: 2px solid #f0f0f0;
+  }
+  
+  /* Informations sur le livre */
+  .book-info {
+    padding: 15px;
+    text-align: center;
+  }
+  
+  .book-info h3 {
+    font-size: 1.2rem;
+    color: #333;
+    margin: 10px 0;
+    font-weight: bold;
+  }
+  
+  .book-info .author {
+    font-size: 1rem;
+    color: #777;
+    margin-bottom: 10px;
+    display: block;
+  }
+  
+  /* Effet au survol de la carte */
+  .book-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Animation sur le titre au survol */
+  .book-card:hover .book-info h3 {
+    color: #007BFF;
+    transition: color 0.3s ease;
+  }
+  
+  /* Animation au survol de l'image */
+  .book-card:hover img {
+    transform: scale(1.05);
+    transition: transform 0.3s ease;
+  }
+  
+  /* Placeholder image in case there's no image */
+  .book-card img {
+    object-fit: cover;
+    width: 100%;
+    height: 200px;
+  }

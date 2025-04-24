@@ -5,7 +5,7 @@ const fs = require('fs');
 
 const app = express();
 
-// Ajoutez ceci AVANT les autres middlewares
+// Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -19,32 +19,37 @@ app.use((req, res, next) => {
   }
 });
 
-// Middleware
+// CORS
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: 'http://localhost:5173', // ton frontend
   credentials: true
 }));
-app.use(express.json());
+
+// Servir les fichiers statiques (uploads d'images)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 const authRoutes = require('./routes/auth');
+const booksRoutes = require('./routes/books'); // <-- 👈 ICI on ajoute la route pour les livres
+
 app.use('/api/auth', authRoutes);
+app.use('/api/books', booksRoutes); // <-- Et on la "monte"
 
-// Catch errors
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
-});
-
+// Logging (optionnel)
 app.use((req, res, next) => {
-  console.log(`Incoming request: ${req.method} ${req.url}`);
+  console.log(`📩 Incoming request: ${req.method} ${req.url}`);
   console.log('Headers:', req.headers);
   console.log('Body:', req.body);
   next();
 });
 
-// Ensure uploads folder exists
+// Gestion des erreurs
+app.use((err, req, res, next) => {
+  console.error('❌ Middleware error:', err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
+});
+
+// Créer le dossier uploads s’il n’existe pas
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);

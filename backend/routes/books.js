@@ -40,8 +40,8 @@ router.post('/', authenticate, upload.array('images', 3), async (req, res) => {
     const { title, category, condition, location, description } = req.body;
 
     // Validation des champs obligatoires
-    if (!title || !category || !condition || !location) {
-      return res.status(400).json({ error: 'Tous les champs obligatoires doivent être remplis' });
+    if (!title || !category || !condition || !location || !description || description.trim().length === 0) {
+      return res.status(400).json({ error: 'Tous les champs obligatoires doivent être remplis, y compris la description' });
     }
 
     // Création du livre dans la base de données
@@ -50,13 +50,13 @@ router.post('/', authenticate, upload.array('images', 3), async (req, res) => {
       category: category.trim(),
       condition: condition.trim(),
       location: location.trim(),
-      description: description?.trim() || null
+      description: description.trim() || null
     }, req.userId);
 
     // Ajout des images si elles existent
     if (req.files && req.files.length > 0) {
       const images = req.files.map(file => ({
-        path: `/uploads/${file.filename}`
+        path: file.filename
       }));
       await Book.addImages(bookId, images);
     }
@@ -73,6 +73,17 @@ router.post('/', authenticate, upload.array('images', 3), async (req, res) => {
     res.status(500).json({
       error: error.message || 'Erreur lors de l\'ajout du livre'
     });
+  }
+});
+
+// Route pour récupérer tous les livres
+router.get('/', async (req, res) => {
+  try {
+    const books = await Book.getAllBooks();
+    res.json({ books });
+  } catch (err) {
+    console.error('Erreur lors de la récupération des livres:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
