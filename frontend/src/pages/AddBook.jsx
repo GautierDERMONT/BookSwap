@@ -75,10 +75,17 @@ const AddBook = () => {
       !formData.category ||
       !formData.condition ||
       !formData.location ||
-      !formData.description ||  // Ajout de la validation pour la description
+      !formData.description ||
       formData.description.trim().length === 0
     ) {
-      setError('Veuillez remplir la description');
+      setError('Veuillez remplir tous les champs obligatoires');
+      setIsSubmitting(false);
+      return;
+    }
+  
+    // Vérification qu'il y a au moins une image
+    if (images.length === 0) {
+      setError('Veuillez ajouter au moins une image');
       setIsSubmitting(false);
       return;
     }

@@ -6,7 +6,6 @@ const authenticate = require('../middleware/authenticate');
 
 const router = express.Router();
 
-// Configuration de Multer pour le stockage des images
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, path.join(__dirname, '../uploads'));
@@ -76,11 +75,18 @@ router.post('/', authenticate, upload.array('images', 3), async (req, res) => {
   }
 });
 
-// Route pour récupérer tous les livres
 router.get('/', async (req, res) => {
   try {
     const books = await Book.getAllBooks();
-    res.json({ books });
+    const booksWithImageUrls = books.map(book => ({
+      ...book,
+      images: book.images.map(img => {
+        // Supprime tout chemin existant et reconstruit proprement
+        const filename = path.basename(img);
+        return `/uploads/${filename}`;
+      }).filter(img => img !== '/uploads/') // Filtre les chemins vides
+    }));
+    res.json({ books: booksWithImageUrls });
   } catch (err) {
     console.error('Erreur lors de la récupération des livres:', err);
     res.status(500).json({ error: 'Erreur serveur' });
