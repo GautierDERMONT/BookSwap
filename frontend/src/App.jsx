@@ -40,6 +40,8 @@ function App() {
         email: response.data.email
       });
       setActiveModal(null);
+      window.location.reload();
+
     } catch (error) {
       console.error('Login failed:', error.response?.data?.error || error.message);
       alert(error.response?.data?.error || 'Échec de la connexion');
@@ -55,6 +57,8 @@ function App() {
       });
       alert('Inscription réussie ! Vous pouvez maintenant vous connecter.');
       setActiveModal('login');
+      window.location.reload();
+
     } catch (error) {
       console.error('Signup failed:', error.response?.data?.error || error.message);
       alert(error.response?.data?.error || 'Échec de l\'inscription');
@@ -63,8 +67,11 @@ function App() {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.clear();  // Supprimer les favoris à la déconnexion
     setIsAuthenticated(false);
     setCurrentUser(null);
+    window.location.reload();
+
   };
 
   return (
@@ -84,6 +91,7 @@ function App() {
             element={
               <HomePage 
                 isAuthenticated={isAuthenticated} 
+                currentUser={currentUser}         // ✅ AJOUTE ÇA
                 onOpenLogin={() => setActiveModal('login')} 
               />
             } 

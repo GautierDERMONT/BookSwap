@@ -1,43 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import './BookCard.css'; // Fichier CSS dédié
+import './BookCard.css';
 
-export default function BookCard({ book }) {
-  const [isFavorite, setIsFavorite] = useState(false);  // Pour gérer l'état du favori
+export default function BookCard({ book, isAuthenticated, currentUser, onRequireLogin }) {
+  const userId = currentUser?.userId || currentUser?.id; // compatibilité selon structure
+  const storageKey = userId ? `favorite-${userId}-${book.id}` : null;
+  const [isFavorite, setIsFavorite] = useState(false);
 
-  // 🧠 Check localStorage à l'ouverture
   useEffect(() => {
-    const storedFavorites = JSON.parse(localStorage.getItem('favorites')) || [];
-    setIsFavorite(storedFavorites.includes(book.id));
-  }, [book.id]);
+    if (storageKey) {
+      const saved = localStorage.getItem(storageKey);
+      setIsFavorite(saved === 'true');
+    }
+  }, [storageKey]);
 
   const handleFavoriteClick = () => {
-    const storedFavorites = JSON.parse(localStorage.getItem('favorites')) || [];
-    let updatedFavorites;
-
-    if (storedFavorites.includes(book.id)) {
-      updatedFavorites = storedFavorites.filter(id => id !== book.id);
-    } else {
-      updatedFavorites = [...storedFavorites, book.id];
+    if (!isAuthenticated) {
+      onRequireLogin();
+      return;
     }
 
-    localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
-    setIsFavorite(!isFavorite);
-    console.log(`${book.title} ${!isFavorite ? 'ajouté à' : 'retiré des'} favoris`);
+    const newFavorite = !isFavorite;
+    setIsFavorite(newFavorite);
+    localStorage.setItem(storageKey, newFavorite.toString());
   };
 
-  // ✅ Construction propre de l'image
-  const imageUrl = book.image_url?.startsWith('/uploads')
+  const imageUrl = book.image_url
     ? `http://localhost:5001${book.image_url}`
     : `http://localhost:5001/uploads/${book.image_url}`;
 
   return (
     <div className="book-card">
       <div className="book-image-container">
-        <img 
-          src={imageUrl}
-          alt={book.title}
-          className="book-image"
-        />
+        <img src={imageUrl} alt={book.title} className="book-image" />
         <button className="favorite-button" onClick={handleFavoriteClick}>
           {isFavorite ? '❤️' : '🤍'}
         </button>
