@@ -7,11 +7,11 @@ npm install express cors jsonwebtoken bcryptjs pg socket.io
 npm install dotenv express cors mysql2 jsonwebtoken bcryptjs socket.io
 npm install bcrypt
 npm install express cors morgan multer
-
-
 npm install mysql2
 npm install dotenv
 npm install axios
+npm install cookie-parser
+
 
 
 frontend:
@@ -20,4 +20,5 @@ npm install
 npm install react-router-dom axios tailwindcss socket.io-client
 npm install axios react-router-dom socket.io-client
 npm install react-feather
+npm install js-cookie
 

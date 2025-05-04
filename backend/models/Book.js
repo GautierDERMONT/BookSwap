@@ -4,13 +4,14 @@ class Book {
   static async create(bookData, userId) {
     const query = `
       INSERT INTO book 
-        (title, category, \`condition\`, location, description, users_id) 
+        (title, author, category, \`condition\`, location, description, users_id) 
       VALUES 
-        (?, ?, ?, ?, ?, ?)
+        (?, ?, ?, ?, ?, ?, ?)
     `;
     
     const params = [
       bookData.title.trim(),
+      bookData.author.trim(), // Bien inclus maintenant
       bookData.category.trim(),
       bookData.condition.trim(),
       bookData.location.trim(),
@@ -42,12 +43,13 @@ class Book {
       SELECT 
         b.id, 
         b.title, 
+        b.author,
         b.category, 
         b.users_id, 
         b.location, 
         b.condition,
         b.description,
-        GROUP_CONCAT(bi.image_path) AS images
+        GROUP_CONCAT(bi.image_path ORDER BY bi.id ASC) AS images
       FROM book b
       LEFT JOIN book_images bi ON b.id = bi.book_id
       GROUP BY b.id

@@ -4,15 +4,16 @@ const { connectDB } = require('./config/db');
 
 const PORT = process.env.PORT || 5001;
 
-async function startServer() {
+const startServer = async () => {
   try {
     await connectDB();
     app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`🚀 Serveur lancé sur le port ${PORT}...`);
     });
   } catch (err) {
-    console.error('❌ Could not start server:', err);
+    console.error('❌ Impossible de démarrer le serveur:', err);
+    process.exit(1);
   }
-}
+};
 
 startServer();

@@ -1,14 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { Plus } from 'react-feather';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import BookCard from '../components/BookCard';
 import './Home.css';
 
 const HomePage = ({ isAuthenticated, currentUser, onOpenLogin }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (location.state?.showLogin) {
+      onOpenLogin();
+  
+      // Nettoie l'état pour éviter que le modal réapparaisse
+      navigate(location.pathname, {
+        replace: true,
+        state: {
+          ...location.state,
+          showLogin: false,
+        },
+      });
+    }
+  }, [location.state, onOpenLogin, navigate, location.pathname]);
+  
 
   const fetchBooks = async () => {
     try {
@@ -32,10 +49,15 @@ const HomePage = ({ isAuthenticated, currentUser, onOpenLogin }) => {
     if (isAuthenticated) {
       navigate('/add-book');
     } else {
-      onOpenLogin();
+      navigate('/', {
+        state: {
+          showLogin: true,
+          redirectAfterLogin: '/add-book',
+        },
+      });
     }
   };
-
+  
   return (
     <>
       <div className="home-container">
@@ -52,9 +74,8 @@ const HomePage = ({ isAuthenticated, currentUser, onOpenLogin }) => {
       </div>
 
       <main className="home-content-standalone">
-        <h1>Bienvenue sur BookSwap</h1>
-        <p>Page d'accueil</p>
-
+        <h1>Parcourir la liste des livres:</h1>
+       
         <div className="book-list">
           {loading ? (
             <p>Chargement des livres...</p>
@@ -69,7 +90,6 @@ const HomePage = ({ isAuthenticated, currentUser, onOpenLogin }) => {
                 currentUser={currentUser} 
                 onRequireLogin={onOpenLogin} 
               />
-
             ))
           ) : (
             <p>Aucun livre disponible pour l'instant.</p>

@@ -30,6 +30,34 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
     }
   };
 
+  const handleFavoritesClick = () => {
+    if (isAuthenticated) {
+      navigate('/favorites');
+    } else {
+      onOpenLogin();
+      navigate('/', { state: { showLogin: true, redirectAfterLogin: '/favorites' } });
+    }
+  };
+
+  const handleMessageClick = () => {
+    if (isAuthenticated) {
+      navigate('/messages');
+    } else {
+      onOpenLogin();
+      navigate('/', { state: { showLogin: true, redirectAfterLogin: '/messages' } });
+    }
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+  };
+
+  const handleLogoutClick = () => {
+    onLogout();
+    navigate('/', { replace: true });
+  };
+
   return (
     <header className="app-header">
       <div className="header-top">
@@ -37,7 +65,7 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
           <img src={logo} alt="BookSwap" className="logo" />
         </Link>
 
-        <div className="search-container">
+        <form className="search-container" onSubmit={handleSearch}>
           <div className="search-bar">
             <input
               type="text"
@@ -45,11 +73,11 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <button className="search-button">
+            <button type="submit" className="search-button">
               <Search size={18} />
             </button>
           </div>
-        </div>
+        </form>
 
         <div className="filters-container">
           <div className="filter-input-container">
@@ -97,13 +125,23 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
                 <Plus size={16} className="mr-1" />
                 Ajouter
               </button>
-              <button className="menu-icon">
+
+              <button 
+                className="menu-icon"
+                onClick={handleFavoritesClick}
+                title="Favoris"
+              >
                 <Heart size={20} />
               </button>
-              <button className="menu-icon">
+
+              <button 
+                className="menu-icon" 
+                onClick={handleMessageClick}
+                title="Messagerie"
+              >
                 <MessageCircle size={20} />
               </button>
-              
+
               <div 
                 className="profile-container"
                 onMouseEnter={() => setShowDropdown(true)}
@@ -115,7 +153,7 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
                 </div>
                 
                 {showDropdown && (
-                  <button className="logout-button" onClick={onLogout}>
+                  <button className="logout-button" onClick={handleLogoutClick}>
                     <LogOut size={16} className="mr-1" />
                     Déconnexion
                   </button>

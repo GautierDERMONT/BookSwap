@@ -10,9 +10,14 @@ const AddBook = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const countWords = (text) => {
+    return text.trim().split(/\s+/).filter(Boolean).length;
+  };
+  
   
   const [formData, setFormData] = useState({
     title: '',
+    author: '',
     category: '',
     condition: '',
     location: '',
@@ -61,29 +66,34 @@ const AddBook = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+  
+    // Limiter la description à 50 mots
+    if (name === 'description') {
+      const words = value.trim().split(/\s+/).filter(Boolean); // Séparer en mots
+      if (words.length > 50) {
+        return; // Empêche l'ajout d'un mot supplémentaire
+      }
+    }
+  
     setFormData(prev => ({ ...prev, [name]: value }));
   };
-
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
   
-    // Vérification si tous les champs obligatoires sont remplis
-    if (
-      !formData.title ||
-      !formData.category ||
-      !formData.condition ||
-      !formData.location ||
-      !formData.description ||
-      formData.description.trim().length === 0
-    ) {
+    // Validation des champs obligatoires
+    const requiredFields = ['title', 'author', 'category', 'condition', 'location', 'description'];
+    const missingFields = requiredFields.filter(field => !formData[field] || formData[field].trim().length === 0);
+  
+    if (missingFields.length > 0) {
       setError('Veuillez remplir tous les champs obligatoires');
       setIsSubmitting(false);
       return;
     }
   
-    // Vérification qu'il y a au moins une image
+    // Validation des images
     if (images.length === 0) {
       setError('Veuillez ajouter au moins une image');
       setIsSubmitting(false);
@@ -93,6 +103,7 @@ const AddBook = () => {
     try {
       const formDataToSend = new FormData();
       formDataToSend.append('title', formData.title.trim());
+      formDataToSend.append('author', formData.author.trim()); // N'oubliez pas l'auteur!
       formDataToSend.append('category', formData.category.trim());
       formDataToSend.append('condition', formData.condition.trim());
       formDataToSend.append('location', formData.location.trim());
@@ -223,17 +234,30 @@ const AddBook = () => {
             />
           </div>
         </div>
+       
+            <div className="form-group">
+              <label>Auteur *</label>
+              <input
+                type="text"
+                name="author"
+                value={formData.author}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <br />
+            <div className="form-group">
+              <label>Description *</label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                required
+                rows="4"
+              />
+              <small>{countWords(formData.description)} / 50 mots</small>
+            </div>
 
-        <div className="form-group">
-          <label>Description</label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            rows="4"
-            maxLength="500"
-          />
-        </div>
 
         <button 
           type="submit" 

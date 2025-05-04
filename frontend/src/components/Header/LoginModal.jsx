@@ -12,7 +12,7 @@ const LoginModal = ({ onClose, onLogin, onSwitchToSignup }) => {
   };
 
   return (
-    <div className="modal-overlay" >
+    <div className="modal-overlay">
       <div className="auth-modal" onClick={e => e.stopPropagation()}>
         <button className="close-button" onClick={onClose}>
           <X size={24} />
@@ -49,7 +49,13 @@ const LoginModal = ({ onClose, onLogin, onSwitchToSignup }) => {
         
         <p className="auth-switch">
           Pas de compte ? 
-          <button className="text-link" onClick={onSwitchToSignup}>
+          <button 
+            className="text-link" 
+            onClick={(e) => {
+              e.preventDefault();
+              onSwitchToSignup();
+            }}
+          >
             S'inscrire
           </button>
         </p>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Header from './components/Header/Header';
 import LoginModal from './components/Header/LoginModal';
@@ -7,43 +7,55 @@ import SignupModal from './components/Header/SignupModal';
 import HomePage from './pages/Home';
 import BooksPage from './pages/Books';
 import AddBook from './pages/AddBook';
-import { Navigate } from 'react-router-dom';
+import BookDetails from './pages/BookDetails';
+import EditBook from './pages/EditBook';
+import Messages from './pages/Messages';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [activeModal, setActiveModal] = useState(null);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      axios.get('http://localhost:5001/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      .then(response => {
-        setIsAuthenticated(true);
-        setCurrentUser(response.data);
-      })
-      .catch(() => {
-        localStorage.removeItem('token');
-      });
-    }
-  }, []);
+    axios.get('http://localhost:5001/api/auth/me', { 
+      withCredentials: true 
+    })
+    .then(response => {
+      setIsAuthenticated(true);
+      setCurrentUser(response.data);
+      
+      if (location.state?.redirectAfterLogin && !location.state?.fromLogout) {
+        navigate(location.state.redirectAfterLogin);
+      }
+    })
+    .catch(() => {});
+  }, [location]);
 
   const handleLogin = async (credentials) => {
     try {
-      const response = await axios.post('http://localhost:5001/api/auth/login', credentials);
-      localStorage.setItem('token', response.data.token);
+      const response = await axios.post(
+        'http://localhost:5001/api/auth/login', 
+        credentials,
+        { withCredentials: true }
+      );
+      
       setIsAuthenticated(true);
       setCurrentUser({
         username: response.data.username,
-        email: response.data.email
+        email: response.data.email,
+        userId: response.data.userId
       });
       setActiveModal(null);
-      window.location.reload();
-
+      
+      if (location.state?.redirectAfterLogin) {
+        navigate(location.state.redirectAfterLogin);
+      } else {
+        window.location.reload();
+      }
     } catch (error) {
-      console.error('Login failed:', error.response?.data?.error || error.message);
+      console.error('Login failed:', error);
       alert(error.response?.data?.error || 'Échec de la connexion');
     }
   };
@@ -57,21 +69,26 @@ function App() {
       });
       alert('Inscription réussie ! Vous pouvez maintenant vous connecter.');
       setActiveModal('login');
-      window.location.reload();
-
     } catch (error) {
-      console.error('Signup failed:', error.response?.data?.error || error.message);
+      console.error('Signup failed:', error);
       alert(error.response?.data?.error || 'Échec de l\'inscription');
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.clear();  // Supprimer les favoris à la déconnexion
-    setIsAuthenticated(false);
-    setCurrentUser(null);
-    window.location.reload();
-
+  const handleLogout = async () => {
+    try {
+      await axios.post(
+        'http://localhost:5001/api/auth/logout',
+        {},
+        { withCredentials: true }
+      );
+      setIsAuthenticated(false);
+      setCurrentUser(null);
+      navigate('/', { state: { fromLogout: true }, replace: true });
+      window.location.reload();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   return (
@@ -85,28 +102,12 @@ function App() {
       />
       
       <Routes>
-      
-          <Route 
-            path="/" 
-            element={
-              <HomePage 
-                isAuthenticated={isAuthenticated} 
-                currentUser={currentUser}         // ✅ AJOUTE ÇA
-                onOpenLogin={() => setActiveModal('login')} 
-              />
-            } 
-          />
+        <Route path="/books/:id/edit" element={isAuthenticated ? <EditBook /> : <Navigate to="/" />} />
+        <Route path="/" element={<HomePage isAuthenticated={isAuthenticated} currentUser={currentUser} onOpenLogin={() => setActiveModal('login')} />} />
+        <Route path="/messages" element={isAuthenticated ? <Messages currentUser={currentUser} onLogout={handleLogout} /> : <Navigate to="/" state={{ from: '/messages' }} />} />
         <Route path="/books" element={<BooksPage />} />
-        <Route 
-          path="/add-book" 
-          element={
-            isAuthenticated ? (
-              <AddBook />
-            ) : (
-              <Navigate to="/" />
-            )
-          } 
-        />
+        <Route path="/books/:id" element={<BookDetails currentUser={currentUser} onOpenLogin={() => setActiveModal('login')} />} />
+        <Route path="/add-book" element={isAuthenticated ? <AddBook /> : <Navigate to="/" />} />
       </Routes>
 
       {activeModal === 'login' && (
