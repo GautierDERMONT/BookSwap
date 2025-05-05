@@ -41,10 +41,20 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
 
   const handleMessageClick = () => {
     if (isAuthenticated) {
-      navigate('/messages');
+      navigate('/messages', { 
+        state: { 
+          fromHeader: true,
+          redirectAfterLogin: '/messages' 
+        } 
+      });
     } else {
       onOpenLogin();
-      navigate('/', { state: { showLogin: true, redirectAfterLogin: '/messages' } });
+      navigate('/', { 
+        state: { 
+          showLogin: true, 
+          redirectAfterLogin: '/messages' 
+        } 
+      });
     }
   };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import Header from './components/Header/Header';
 import LoginModal from './components/Header/LoginModal';
@@ -10,6 +10,7 @@ import AddBook from './pages/AddBook';
 import BookDetails from './pages/BookDetails';
 import EditBook from './pages/EditBook';
 import Messages from './pages/Messages';
+import './App.css';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -19,18 +20,31 @@ function App() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get('http://localhost:5001/api/auth/me', { 
-      withCredentials: true 
-    })
-    .then(response => {
-      setIsAuthenticated(true);
-      setCurrentUser(response.data);
-      
-      if (location.state?.redirectAfterLogin && !location.state?.fromLogout) {
-        navigate(location.state.redirectAfterLogin);
+    const checkAuth = async () => {
+      try {
+        const response = await axios.get('http://localhost:5001/api/auth/me', { 
+          withCredentials: true,
+          validateStatus: (status) => status < 500
+        });
+        
+        if (response.status === 200) {
+          setIsAuthenticated(true);
+          setCurrentUser(response.data);
+          
+          if (location.state?.redirectAfterLogin && !location.state?.fromLogout) {
+            navigate(location.state.redirectAfterLogin);
+          }
+        } else {
+          setIsAuthenticated(false);
+          setCurrentUser(null);
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        setIsAuthenticated(false);
       }
-    })
-    .catch(() => {});
+    };
+
+    checkAuth();
   }, [location]);
 
   const handleLogin = async (credentials) => {
@@ -43,16 +57,17 @@ function App() {
       
       setIsAuthenticated(true);
       setCurrentUser({
+        id: response.data.userId,
         username: response.data.username,
-        email: response.data.email,
-        userId: response.data.userId
+        email: response.data.email
       });
       setActiveModal(null);
+
+      window.location.reload();
+
       
       if (location.state?.redirectAfterLogin) {
         navigate(location.state.redirectAfterLogin);
-      } else {
-        window.location.reload();
       }
     } catch (error) {
       console.error('Login failed:', error);
@@ -84,8 +99,10 @@ function App() {
       );
       setIsAuthenticated(false);
       setCurrentUser(null);
-      navigate('/', { state: { fromLogout: true }, replace: true });
+      
       window.location.reload();
+
+      navigate('/', { state: { fromLogout: true }, replace: true });
     } catch (error) {
       console.error('Logout failed:', error);
     }
@@ -102,14 +119,44 @@ function App() {
       />
       
       <Routes>
-        <Route path="/books/:id/edit" element={isAuthenticated ? <EditBook /> : <Navigate to="/" />} />
-        <Route path="/" element={<HomePage isAuthenticated={isAuthenticated} currentUser={currentUser} onOpenLogin={() => setActiveModal('login')} />} />
-        <Route path="/messages" element={isAuthenticated ? <Messages currentUser={currentUser} onLogout={handleLogout} /> : <Navigate to="/" state={{ from: '/messages' }} />} />
+        <Route path="/" element={
+          <HomePage 
+            isAuthenticated={isAuthenticated} 
+            currentUser={currentUser} 
+            onOpenLogin={() => setActiveModal('login')} 
+          />
+        } />
+        
         <Route path="/books" element={<BooksPage />} />
-        <Route path="/books/:id" element={<BookDetails currentUser={currentUser} onOpenLogin={() => setActiveModal('login')} />} />
-        <Route path="/add-book" element={isAuthenticated ? <AddBook /> : <Navigate to="/" />} />
+        <Route path="/books/:id" element={
+          <BookDetails 
+            currentUser={currentUser} 
+            onOpenLogin={() => setActiveModal('login')} 
+          />
+        } />
+        <Route path="/books/:id/edit" element={
+          isAuthenticated ? <EditBook /> : <Navigate to="/" />
+        } />
+        
+        <Route path="/add-book" element={
+          isAuthenticated ? <AddBook /> : <Navigate to="/" />
+        } />
+        
+        {/* Routes pour les messages */}
+        <Route path="/messages" element={
+          isAuthenticated ? 
+            <Messages currentUser={currentUser} /> : 
+            <Navigate to="/" state={{ redirectAfterLogin: '/messages' }} />
+        } />
+        
+        <Route path="/messages/:conversationId" element={
+          isAuthenticated ? 
+            <Messages currentUser={currentUser} /> : 
+            <Navigate to="/" state={{ redirectAfterLogin: `/messages/${useParams().conversationId}` }} />
+        } />
       </Routes>
 
+      {/* Modales */}
       {activeModal === 'login' && (
         <LoginModal
           onClose={() => setActiveModal(null)}

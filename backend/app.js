@@ -27,9 +27,11 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const authRoutes = require('./routes/auth');
 const booksRoutes = require('./routes/books');
+const messagesRoutes = require('./routes/messages');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/books', booksRoutes);
+app.use('/api', messagesRoutes);
 
 app.use((req, res, next) => {
   console.log(`📩 Incoming request: ${req.method} ${req.url}`);
@@ -45,5 +47,6 @@ const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);
 }
+
 
 module.exports = app;

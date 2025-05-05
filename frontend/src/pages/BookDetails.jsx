@@ -4,7 +4,6 @@ import axios from 'axios';
 import api from '../services/api';
 import './BookDetails.css';
 
-
 const API_URL = 'http://localhost:5001';
 
 const getImageUrl = (img) =>
@@ -74,7 +73,6 @@ const BookDetails = ({ currentUser, onOpenLogin }) => {
   const handleDeleteClick = async () => {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer ce livre ?")) {
       try {
-        // Envoie la liste des images à supprimer au serveur
         await api.delete(`/books/${id}`, { 
           data: { images: book.images },
           withCredentials: true 
@@ -87,20 +85,38 @@ const BookDetails = ({ currentUser, onOpenLogin }) => {
     }
   };
 
-  const handleMessageClick = () => {
+  const handleMessageClick = async () => {
     if (!currentUser) {
       onOpenLogin();
       return;
     }
   
-    api.post('/conversations', { 
-      bookId: book.id, 
-      recipientId: book.user.id 
-    })
-    .then(res => {
-      navigate(`/messages/${res.data.conversationId}`);
-    })
-    .catch(console.error);
+    try {
+      // Créer ou récupérer la conversation
+      const response = await api.post('/conversations', {
+        bookId: book.id,
+        recipientId: book.user.id
+      }, { withCredentials: true });
+  
+      // Rediriger vers la messagerie avec la conversation
+      navigate(`/messages/${response.data.conversationId}`, {
+        state: {
+          bookInfo: {
+            id: book.id,
+            title: book.title,
+            bookLocation: book.location, // <-- Ajout de la localisation
+            image: book.images?.[0]
+          },
+          interlocutor: {
+            id: book.user.id,
+            username: book.user.username
+          }
+        }
+      });
+    } catch (error) {
+      console.error("Erreur lors de la création de la conversation:", error);
+      alert("Impossible de démarrer la conversation");
+    }
   };
 
   if (loading) return <div className="book-details-loading">Chargement...</div>;
