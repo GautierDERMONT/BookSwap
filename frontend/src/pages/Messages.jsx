@@ -185,8 +185,7 @@ const Messages = ({ currentUser }) => {
       <div className="message-content-area">
         {selectedConversation ? (
           <>
-            <div className="message-header">
-            </div>
+
             
             <div className="message-messages">
               {messages.map((msg) => (
