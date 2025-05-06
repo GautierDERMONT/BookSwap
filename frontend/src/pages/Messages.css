@@ -379,3 +379,72 @@
   }
 }
 
+
+/* Bouton de suppression de conversation */
+.delete-conversation-btn {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 20px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-left: auto;
+  padding: 0;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+
+.delete-conversation-btn:hover {
+  color: #ff4d4f;
+}
+
+/* Ajustement pour l'élément de conversation */
+.message-conversation-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 15px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 60px;
+  gap: 10px;
+}
+
+.message-conv-info {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.message-book-publisher {
+  font-size: 13px;
+  color: #555;
+  font-weight: 600;
+}
+
+.message-book-publisher h4 {
+  margin: 0;
+  font-size: 14px;
+  color: #333;
+}
+
+.message-book-publisher p {
+  margin: 5px 0 0;
+  font-size: 13px;
+  color: #666;
+}
+
+/* Conversation non lue */
+.message-conversation-item.unread {
+  background-color: #e0f7fa; /* Couleur de fond différente pour les messages non lus */
+  border-left: 5px solid #09b1ba; /* Bordure sur le côté gauche */
+}
+
+.message-conv-avatar.unread img {
+  border: 2px solid #09b1ba; /* Ajouter une bordure sur l'avatar pour mettre en avant */
+}
+

@@ -47,39 +47,41 @@ const Messages = ({ currentUser }) => {
     fetchData();
   }, [location.state, id]);
 
-  const loadConversationDetails = async (convId, bookId) => {
-    try {
-      const [messagesRes, bookRes] = await Promise.all([
-        api.get(`/conversations/${convId}/messages`),
-        api.get(`/books/${bookId}`)
-      ]);
+// Dans Messages.jsx, modifier la fonction loadConversationDetails
+const loadConversationDetails = async (convId, bookId) => {
+  try {
+    const [messagesRes, bookRes] = await Promise.all([
+      api.get(`/conversations/${convId}/messages`),
+      api.get(`/books/${bookId}`)
+    ]);
 
-      setMessages(messagesRes.data.messages || []);
-      setCurrentBook({
-        ...bookRes.data.book,
-        location: bookRes.data.book.location || "Non spécifiée"
+    setMessages(messagesRes.data.messages || []);
+    setCurrentBook({
+      ...bookRes.data.book,
+      location: bookRes.data.book.location || "Non spécifiée"
+    });
+    
+    const conv = conversations.find(c => c.id === convId);
+    if (conv) {
+      setInterlocutor({
+        id: conv.interlocutor_id,
+        username: conv.interlocutor_name,
+        avatar: conv.interlocutor_avatar
       });
-      
-      const conv = conversations.find(c => c.id === convId);
-      if (conv) {
-        setInterlocutor({
-          id: conv.interlocutor_id,
-          username: conv.interlocutor_name,
-          avatar: conv.interlocutor_avatar
-        });
-      }
-      
-      scrollToBottom();
-    } catch (error) {
-      console.error('Error loading details:', error);
     }
-  };
+    
+    scrollToBottom();
+    
+    // Ajouter cette ligne pour rafraîchir le compteur de messages non lus
+    await api.get('/unread'); // Cela va déclencher la mise à jour dans Header
+  } catch (error) {
+    console.error('Error loading details:', error);
+  }
+};
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
-
-
 
   const handleDeleteConversation = async (conversationId) => {
     if (window.confirm("Voulez-vous vraiment supprimer cette conversation ?")) {
@@ -150,29 +152,40 @@ const Messages = ({ currentUser }) => {
         
         {conversations.length > 0 ? (
           <div className="message-conversations">
-                {conversations.map((conv) => (
-                  <div
-                    key={conv.id}
-                    className={`message-conversation-item ${selectedConversation?.id === conv.id ? 'active' : ''}`}
-                    onClick={() => {
-                      setSelectedConversation(conv);
-                      navigate(`/messages/${conv.id}`);
-                      loadConversationDetails(conv.id, conv.book_id);
-                    }}
-                  >
-                    
-                    <div className="message-conv-info">
-                      <div className="message-conv-header">
-                        <h4 className="message-conv-name">{conv.interlocutor_name}</h4>
-                        <span className="message-conv-date">{formatDate(conv.last_message_date)}</span>
-                      </div>
-                      <p className="message-conv-preview">
-                        {conv.last_message?.substring(0, 40) || 'Nouvelle conversation'}
-                      </p>
-                    </div>
+            {conversations.map((conv) => (
+              <div
+                key={conv.id}
+                className={`message-conversation-item ${selectedConversation?.id === conv.id ? 'active' : ''}`}
+                onClick={(e) => {
+                  // Empêcher la navigation si on clique sur la croix
+                  if (e.target.closest('.delete-conversation-btn')) return;
+                  setSelectedConversation(conv);
+                  navigate(`/messages/${conv.id}`);
+                  loadConversationDetails(conv.id, conv.book_id);
+                }}
+              >
+                <div className="message-conv-info">
+                  <div className="message-conv-header">
+                    <h4 className="message-conv-name">{conv.interlocutor_name}</h4>
+                    <span className="message-conv-date">{formatDate(conv.last_message_date)}</span>
                   </div>
-                ))}
+                  <p className="message-conv-preview">
+                    {conv.last_message?.substring(0, 40) || 'Nouvelle conversation'}
+                  </p>
+                </div>
+                <button 
+                  className="delete-conversation-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteConversation(conv.id);
+                  }}
+                  aria-label="Supprimer la conversation"
+                >
+                  &times;
+                </button>
               </div>
+            ))}
+          </div>
         ) : (
           <div className="message-empty-conversations">
             <FiMessageSquare size={48} />
@@ -185,8 +198,6 @@ const Messages = ({ currentUser }) => {
       <div className="message-content-area">
         {selectedConversation ? (
           <>
-
-            
             <div className="message-messages">
               {messages.map((msg) => (
                 <div
@@ -227,7 +238,6 @@ const Messages = ({ currentUser }) => {
       {/* Récapitulatif du livre */}
       {selectedConversation && currentBook && (
         <div className="message-book-summary">
-          
           <div className="message-book-header">
             <h3>Détails du livre</h3>
           </div>
@@ -256,6 +266,13 @@ const Messages = ({ currentUser }) => {
             <div className="message-book-description">
               <p>{currentBook.description || 'Aucune description disponible.'}</p>
             </div>
+            
+            {/* Section éditeur */}
+              {/* Section éditeur */}
+              <div className="message-book-publisher">
+                <h4>Publié par :</h4>
+                <p>{selectedConversation?.publisher_name || currentBook?.user?.username || 'Non spécifié'}</p>
+              </div>
           </div>
         </div>
       )}

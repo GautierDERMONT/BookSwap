@@ -144,9 +144,12 @@ router.delete('/:id', authenticate, async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
+    console.log('Fetching book with ID:', req.params.id); // Log l'ID reçu
+
     const query = `
       SELECT 
         b.*, 
+        u.id as user_id, 
         u.username,
         u.email,
         (SELECT GROUP_CONCAT(image_path ORDER BY id ASC) FROM book_images WHERE book_id = b.id) as images
@@ -156,8 +159,10 @@ router.get('/:id', async (req, res) => {
     `;
 
     const [rows] = await pool.query(query, [req.params.id]);
-    
+    console.log('Query results:', rows); // Log les résultats
+
     if (!rows || rows.length === 0) {
+      console.log('No book found with ID:', req.params.id);
       return res.status(404).json({ error: 'Livre non trouvé' });
     }
 
@@ -165,13 +170,15 @@ router.get('/:id', async (req, res) => {
       ...rows[0],
       images: rows[0].images ? rows[0].images.split(',') : [],
       user: {
-        id: rows[0].users_id,
+        id: rows[0].user_id,
         username: rows[0].username,
         email: rows[0].email
       }
     };
 
+    console.log('Formatted book:', book); // Log le livre formaté
     res.json({ book });
+    
   } catch (err) {
     console.error('Erreur SQL:', err);
     res.status(500).json({ 
@@ -180,6 +187,7 @@ router.get('/:id', async (req, res) => {
     });
   }
 });
+
 
 router.put('/:id', authenticate, upload.array('images', 3), async (req, res) => {
   try {

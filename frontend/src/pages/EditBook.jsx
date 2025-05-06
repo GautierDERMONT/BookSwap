@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; 
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Plus, X, Upload } from 'react-feather';
@@ -89,8 +89,14 @@ const EditBook = () => {
 
   const handleFiles = (files) => {
     const validFiles = files
-      .filter(file => file.type.startsWith('image/') && !images.some(img => img.name === file.name))
+      .filter(file => file.type.startsWith('image/'))
       .slice(0, 3 - (images.length + existingImages.length));
+
+    if (files.length !== validFiles.length) {
+      setError('Veuillez choisir uniquement des images.');
+    } else {
+      setError(null); // Réinitialiser l'erreur si tous les fichiers sont valides
+    }
 
     if (validFiles.length) {
       setImages([...images, ...validFiles]);

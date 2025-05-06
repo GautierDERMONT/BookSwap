@@ -50,6 +50,37 @@ router.get('/conversations', authenticate, async (req, res) => {
   }
 });
 
+
+router.delete('/conversations/:id', authenticate, async (req, res) => {
+  try {
+    const conversationId = req.params.id;
+    const userId = req.userId;
+
+    // Vérifier que l'utilisateur fait partie de la conversation
+    const [conv] = await pool.query(
+      `SELECT id FROM conversations 
+       WHERE id = ? AND (user1_id = ? OR user2_id = ?)`,
+      [conversationId, userId, userId]
+    );
+
+    if (!conv.length) {
+      return res.status(403).json({ error: "Non autorisé" });
+    }
+
+    // Supprimer les messages d'abord
+    await pool.query(`DELETE FROM messages WHERE conversation_id = ?`, [conversationId]);
+    
+    // Puis la conversation
+    await pool.query(`DELETE FROM conversations WHERE id = ?`, [conversationId]);
+
+    res.json({ success: true });
+    
+  } catch (err) {
+    console.error('Erreur suppression conversation:', err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
 router.post('/conversations', authenticate, async (req, res) => {
   try {
     const { bookId, recipientId } = req.body;
@@ -171,5 +202,28 @@ router.post('/conversations/:conversationId/messages', authenticate, async (req,
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
+
+// Récupérer le nombre de messages non lus
+router.get('/unread-count', authenticate, async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    const [rows] = await pool.query(
+      `SELECT COUNT(*) as unreadCount
+       FROM messages m
+       JOIN conversations c ON m.conversation_id = c.id
+       WHERE m.is_read = 0 AND m.sender_id != ? 
+         AND (c.user1_id = ? OR c.user2_id = ?)`,
+      [userId, userId, userId]
+    );
+
+    res.json({ unreadCount: rows[0].unreadCount });
+
+  } catch (err) {
+    console.error('Erreur récupération nombre de messages non lus:', err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
 
 module.exports = router;

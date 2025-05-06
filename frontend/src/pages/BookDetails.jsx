@@ -92,19 +92,17 @@ const BookDetails = ({ currentUser, onOpenLogin }) => {
     }
   
     try {
-      // Créer ou récupérer la conversation
       const response = await api.post('/conversations', {
         bookId: book.id,
         recipientId: book.user.id
       }, { withCredentials: true });
   
-      // Rediriger vers la messagerie avec la conversation
       navigate(`/messages/${response.data.conversationId}`, {
         state: {
           bookInfo: {
             id: book.id,
             title: book.title,
-            bookLocation: book.location, // <-- Ajout de la localisation
+            bookLocation: book.location,
             image: book.images?.[0]
           },
           interlocutor: {
@@ -115,9 +113,10 @@ const BookDetails = ({ currentUser, onOpenLogin }) => {
       });
     } catch (error) {
       console.error("Erreur lors de la création de la conversation:", error);
-      alert("Impossible de démarrer la conversation");
+      alert(error.response?.data?.error || "Impossible de démarrer la conversation");
     }
   };
+  
 
   if (loading) return <div className="book-details-loading">Chargement...</div>;
   if (!book) return <div className="book-details-error">Livre non trouvé</div>;

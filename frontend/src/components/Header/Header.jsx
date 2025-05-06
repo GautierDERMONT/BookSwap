@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Search, Heart, MessageCircle, User, Plus, LogOut } from 'react-feather';
+import api from '../../services/api';
 import './Header.css';
 import logo from '../../assets/logo.png';
 
@@ -9,7 +10,9 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
   const [activeFilters, setActiveFilters] = useState([]);
   const [newFilter, setNewFilter] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const navigate = useNavigate();
+  const location = useLocation(); // <--- Ajout pour détecter les changements d'URL
 
   const addFilter = () => {
     if (newFilter && !activeFilters.includes(newFilter)) {
@@ -67,6 +70,23 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
     onLogout();
     navigate('/', { replace: true });
   };
+
+  const fetchUnreadMessages = async () => {
+    try {
+      const response = await api.get('/unread-count');
+      setUnreadMessages(response.data.unreadCount || 0);
+    } catch (error) {
+      console.error('Erreur lors de la récupération des messages non lus', error);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchUnreadMessages();
+    } else {
+      setUnreadMessages(0);
+    }
+  }, [isAuthenticated, location.pathname]); // <-- se met à jour au changement de page
 
   return (
     <header className="app-header">
@@ -150,6 +170,9 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
                 title="Messagerie"
               >
                 <MessageCircle size={20} />
+                {unreadMessages > 0 && (
+                  <span className="unread-badge">{unreadMessages}</span> 
+                )}
               </button>
 
               <div 
