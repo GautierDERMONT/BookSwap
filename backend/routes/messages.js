@@ -3,16 +3,14 @@ const router = express.Router();
 const authenticate = require('../middleware/authenticate');
 const { pool } = require('../config/db');
 
-// Récupérer les conversations d'un utilisateur
 router.get('/conversations', authenticate, async (req, res) => {
   try {
-    const userId = req.userId;
-
     const [conversations] = await pool.query(
       `SELECT 
         c.id, 
         c.book_id, 
         b.title as book_title,
+        (SELECT bi.image_path FROM book_images bi WHERE bi.book_id = c.book_id LIMIT 1) as book_image,
         CASE 
           WHEN c.user1_id = ? THEN u2.id 
           ELSE u1.id 
@@ -22,14 +20,15 @@ router.get('/conversations', authenticate, async (req, res) => {
           ELSE u1.username 
         END as interlocutor_name,
         (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message,
-        (SELECT created_at FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_date
+        (SELECT created_at FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_date,
+        (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND is_read = 0 AND sender_id != ?) as unread_count
        FROM conversations c
        LEFT JOIN users u1 ON c.user1_id = u1.id
        LEFT JOIN users u2 ON c.user2_id = u2.id
        LEFT JOIN book b ON c.book_id = b.id
        WHERE c.user1_id = ? OR c.user2_id = ?
        ORDER BY last_message_date DESC`,
-      [userId, userId, userId, userId]
+      [req.userId, req.userId, req.userId, req.userId, req.userId]
     );
 
     res.json({
@@ -37,26 +36,29 @@ router.get('/conversations', authenticate, async (req, res) => {
         id: conv.id,
         book_id: conv.book_id,
         book_title: conv.book_title,
+        book_image: conv.book_image ? `http://localhost:5001/uploads/${conv.book_image}` : null,
         interlocutor_id: conv.interlocutor_id,
         interlocutor_name: conv.interlocutor_name,
         last_message: conv.last_message || "Nouvelle conversation",
-        last_message_date: conv.last_message_date || new Date().toISOString()
+        last_message_date: conv.last_message_date || new Date().toISOString(),
+        unread_count: conv.unread_count || 0
       }))
     });
-
   } catch (err) {
-    console.error('Erreur récupération conversations:', err);
-    res.status(500).json({ error: "Erreur serveur" });
+    console.error('Database error:', err);
+    res.status(500).json({ 
+      error: "Database error",
+      details: err.message,
+      sqlError: err.sqlMessage
+    });
   }
 });
-
 
 router.delete('/conversations/:id', authenticate, async (req, res) => {
   try {
     const conversationId = req.params.id;
     const userId = req.userId;
 
-    // Vérifier que l'utilisateur fait partie de la conversation
     const [conv] = await pool.query(
       `SELECT id FROM conversations 
        WHERE id = ? AND (user1_id = ? OR user2_id = ?)`,
@@ -67,16 +69,13 @@ router.delete('/conversations/:id', authenticate, async (req, res) => {
       return res.status(403).json({ error: "Non autorisé" });
     }
 
-    // Supprimer les messages d'abord
     await pool.query(`DELETE FROM messages WHERE conversation_id = ?`, [conversationId]);
-    
-    // Puis la conversation
     await pool.query(`DELETE FROM conversations WHERE id = ?`, [conversationId]);
 
     res.json({ success: true });
     
   } catch (err) {
-    console.error('Erreur suppression conversation:', err);
+    console.error('Error deleting conversation:', err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -86,7 +85,6 @@ router.post('/conversations', authenticate, async (req, res) => {
     const { bookId, recipientId } = req.body;
     const userId = req.userId;
 
-    // Vérifier si la conversation existe déjà
     const [existing] = await pool.query(
       `SELECT id FROM conversations 
        WHERE ((user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?))
@@ -101,7 +99,6 @@ router.post('/conversations', authenticate, async (req, res) => {
       });
     }
 
-    // Créer nouvelle conversation
     const [result] = await pool.query(
       `INSERT INTO conversations (user1_id, user2_id, book_id) 
        VALUES (?, ?, ?)`,
@@ -114,18 +111,16 @@ router.post('/conversations', authenticate, async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Erreur création conversation:', err);
+    console.error('Error creating conversation:', err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
 
-// Récupérer les messages d'une conversation
 router.get('/conversations/:conversationId/messages', authenticate, async (req, res) => {
   try {
     const { conversationId } = req.params;
     const userId = req.userId;
 
-    // Vérifier que l'utilisateur fait bien partie de la conversation
     const [convCheck] = await pool.query(
       `SELECT id FROM conversations 
        WHERE id = ? AND (user1_id = ? OR user2_id = ?)`,
@@ -136,7 +131,6 @@ router.get('/conversations/:conversationId/messages', authenticate, async (req, 
       return res.status(403).json({ error: "Accès non autorisé" });
     }
 
-    // Récupérer les messages
     const [messages] = await pool.query(
       `SELECT 
         m.id,
@@ -152,7 +146,6 @@ router.get('/conversations/:conversationId/messages', authenticate, async (req, 
       [conversationId]
     );
 
-    // Marquer les messages comme lus
     await pool.query(
       `UPDATE messages SET is_read = TRUE 
        WHERE conversation_id = ? AND sender_id != ?`,
@@ -162,20 +155,17 @@ router.get('/conversations/:conversationId/messages', authenticate, async (req, 
     res.json({ messages });
 
   } catch (err) {
-    console.error('Erreur récupération messages:', err);
+    console.error('Error fetching messages:', err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
 
-
-// Envoyer un message
 router.post('/conversations/:conversationId/messages', authenticate, async (req, res) => {
   try {
     const { conversationId } = req.params;
     const { content } = req.body;
     const userId = req.userId;
 
-    // Vérifier que la conversation existe et que l'utilisateur y a accès
     const [convCheck] = await pool.query(
       `SELECT id FROM conversations 
        WHERE id = ? AND (user1_id = ? OR user2_id = ?)`,
@@ -186,7 +176,6 @@ router.post('/conversations/:conversationId/messages', authenticate, async (req,
       return res.status(403).json({ error: "Accès non autorisé" });
     }
 
-    // Insérer le message
     const [result] = await pool.query(
       `INSERT INTO messages (conversation_id, sender_id, content)
        VALUES (?, ?, ?)`,
@@ -198,12 +187,11 @@ router.post('/conversations/:conversationId/messages', authenticate, async (req,
     });
 
   } catch (err) {
-    console.error('Erreur envoi message:', err);
+    console.error('Error sending message:', err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
 
-// Récupérer le nombre de messages non lus
 router.get('/unread-count', authenticate, async (req, res) => {
   try {
     const userId = req.userId;
@@ -220,10 +208,9 @@ router.get('/unread-count', authenticate, async (req, res) => {
     res.json({ unreadCount: rows[0].unreadCount });
 
   } catch (err) {
-    console.error('Erreur récupération nombre de messages non lus:', err);
+    console.error('Error fetching unread count:', err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
-
 
 module.exports = router;

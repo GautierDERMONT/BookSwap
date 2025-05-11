@@ -16,6 +16,7 @@ const Messages = ({ currentUser }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams();
+  const [initialSelectionDone, setInitialSelectionDone] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -25,20 +26,74 @@ const Messages = ({ currentUser }) => {
         const allConvs = convResponse.data.conversations || [];
         setConversations(allConvs);
 
-        if (id) {
+        if (location.state?.bookId) {
+          const { bookId, recipientId } = location.state;
+          
+          const existingConv = allConvs.find(c => 
+            c.book_id === bookId && 
+            (c.interlocutor_id === recipientId || c.user1_id === recipientId || c.user2_id === recipientId)
+          );
+
+          if (existingConv) {
+            setSelectedConversation(existingConv);
+            await loadConversationDetails(existingConv.id, existingConv.book_id);
+            navigate(`/messages/${existingConv.id}`, { replace: true });
+          } else {
+            const response = await api.post('/conversations', {
+              bookId,
+              recipientId
+            });
+            
+            const newConv = {
+              id: response.data.conversationId,
+              book_id: bookId,
+              interlocutor_id: recipientId,
+              interlocutor_name: location.state?.interlocutor?.username,
+              ...location.state?.bookInfo
+            };
+            
+            setSelectedConversation(newConv);
+            setConversations([newConv, ...allConvs]);
+            await loadConversationDetails(response.data.conversationId, bookId);
+            navigate(`/messages/${response.data.conversationId}`, { replace: true });
+          }
+        } 
+        else if (id) {
           const conv = allConvs.find(c => c.id === parseInt(id));
           if (conv) {
             setSelectedConversation(conv);
-            loadConversationDetails(conv.id, conv.book_id);
+            await loadConversationDetails(conv.id, conv.book_id);
+          } else {
+            navigate('/messages');
           }
-        } else if (location.state?.newConversation) {
-          await handleNewConversation(allConvs);
-        } else if (allConvs.length > 0) {
-          setSelectedConversation(allConvs[0]);
-          loadConversationDetails(allConvs[0].id, allConvs[0].book_id);
+        }
+        else if (allConvs.length > 0 && !initialSelectionDone) {
+          const unreadConvs = allConvs.filter(c => c.unread_count > 0);
+          let convToSelect = null;
+
+          if (unreadConvs.length > 0) {
+            convToSelect = unreadConvs.reduce((prev, current) => 
+              new Date(prev.last_message_date) > new Date(current.last_message_date) ? prev : current
+            );
+          } else {
+            convToSelect = allConvs.reduce((prev, current) => 
+              new Date(prev.last_message_date) > new Date(current.last_message_date) ? prev : current
+            );
+          }
+
+          if (!selectedConversation && convToSelect) {
+            setSelectedConversation(convToSelect);
+            await loadConversationDetails(convToSelect.id, convToSelect.book_id);
+            navigate(`/messages/${convToSelect.id}`, { replace: true });
+          }
+          
+          setInitialSelectionDone(true);
         }
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error fetching conversations:', error);
+        if (error.response?.status === 401) {
+          navigate('/login');
+        }
       } finally {
         setLoading(false);
       }
@@ -47,40 +102,75 @@ const Messages = ({ currentUser }) => {
     fetchData();
   }, [location.state, id]);
 
-// Dans Messages.jsx, modifier la fonction loadConversationDetails
-const loadConversationDetails = async (convId, bookId) => {
-  try {
-    const [messagesRes, bookRes] = await Promise.all([
-      api.get(`/conversations/${convId}/messages`),
-      api.get(`/books/${bookId}`)
-    ]);
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      if (selectedConversation) {
+        try {
+          const messagesRes = await api.get(`/conversations/${selectedConversation.id}/messages`);
+          setMessages(messagesRes.data.messages || []);
+        } catch (error) {
+          console.error('Error refreshing messages:', error);
+        }
+      }
+    }, 10000);
 
-    setMessages(messagesRes.data.messages || []);
-    setCurrentBook({
-      ...bookRes.data.book,
-      location: bookRes.data.book.location || "Non spécifiée"
-    });
-    
-    const conv = conversations.find(c => c.id === convId);
-    if (conv) {
-      setInterlocutor({
-        id: conv.interlocutor_id,
-        username: conv.interlocutor_name,
-        avatar: conv.interlocutor_avatar
-      });
+    return () => clearInterval(interval);
+  }, [selectedConversation]);
+
+  useEffect(() => {
+    if (selectedConversation) {
+      // Marquer les messages comme lus
+      api.post(`/conversations/${selectedConversation.id}/mark-as-read`);
+      
+      // Mettre à jour la liste des conversations
+      setConversations(prev => prev.map(conv => {
+        if (conv.id === selectedConversation.id) {
+          return { ...conv, unread_count: 0 };
+        }
+        return conv;
+      }));
     }
-    
-    scrollToBottom();
-    
-    // Ajouter cette ligne pour rafraîchir le compteur de messages non lus
-    await api.get('/unread'); // Cela va déclencher la mise à jour dans Header
-  } catch (error) {
-    console.error('Error loading details:', error);
-  }
-};
+  }, [selectedConversation]);
+
+  const loadConversationDetails = async (convId, bookId) => {
+    try {
+      const [messagesRes, bookRes] = await Promise.all([
+        api.get(`/conversations/${convId}/messages`),
+        bookId ? api.get(`/books/${bookId}`) : Promise.resolve({ data: {} })
+      ]);
+
+      setMessages(messagesRes.data.messages || []);
+      
+      if (bookRes.data.book) {
+        setCurrentBook({
+          ...bookRes.data.book,
+          location: bookRes.data.book.location || "Non spécifiée"
+        });
+      }
+
+      if (selectedConversation?.id === convId) {
+        const conv = conversations.find(c => c.id === convId);
+        if (conv) {
+          setInterlocutor({
+            id: conv.interlocutor_id,
+            username: conv.interlocutor_name
+          });
+        }
+      }
+      
+      scrollToBottom();
+    } catch (error) {
+      console.error('Error loading conversation details:', error);
+    }
+  };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'end'
+      });
+    }, 100);
   };
 
   const handleDeleteConversation = async (conversationId) => {
@@ -88,18 +178,15 @@ const loadConversationDetails = async (convId, bookId) => {
       try {
         await api.delete(`/conversations/${conversationId}`);
         
-        // Mettre à jour la liste des conversations
         const updatedConversations = conversations.filter(c => c.id !== conversationId);
         setConversations(updatedConversations);
         
-        // Si on supprime la conversation active
         if (selectedConversation?.id === conversationId) {
           setSelectedConversation(null);
           setMessages([]);
           setCurrentBook(null);
           navigate('/messages');
         }
-        
       } catch (error) {
         console.error('Error deleting conversation:', error);
         alert("Erreur lors de la suppression");
@@ -144,7 +231,6 @@ const loadConversationDetails = async (convId, bookId) => {
 
   return (
     <div className="message-container">
-      {/* Liste des conversations */}
       <div className="message-conversation-list">
         <div className="message-list-header">
           <h2>Messages</h2>
@@ -155,13 +241,14 @@ const loadConversationDetails = async (convId, bookId) => {
             {conversations.map((conv) => (
               <div
                 key={conv.id}
-                className={`message-conversation-item ${selectedConversation?.id === conv.id ? 'active' : ''}`}
-                onClick={(e) => {
-                  // Empêcher la navigation si on clique sur la croix
-                  if (e.target.closest('.delete-conversation-btn')) return;
-                  setSelectedConversation(conv);
-                  navigate(`/messages/${conv.id}`);
-                  loadConversationDetails(conv.id, conv.book_id);
+                className={`message-conversation-item 
+                  ${selectedConversation?.id === conv.id ? 'active' : ''}`}
+                onClick={async () => {
+                  if (selectedConversation?.id !== conv.id) {
+                    setSelectedConversation(conv);
+                    navigate(`/messages/${conv.id}`);
+                    await loadConversationDetails(conv.id, conv.book_id);
+                  }
                 }}
               >
                 <div className="message-conv-info">
@@ -171,6 +258,9 @@ const loadConversationDetails = async (convId, bookId) => {
                   </div>
                   <p className="message-conv-preview">
                     {conv.last_message?.substring(0, 40) || 'Nouvelle conversation'}
+                    {conv.unread_count > 0 && (
+                      <span className="unread-badge">{conv.unread_count}</span>
+                    )}
                   </p>
                 </div>
                 <button 
@@ -194,11 +284,11 @@ const loadConversationDetails = async (convId, bookId) => {
         )}
       </div>
 
-      {/* Zone de messagerie principale */}
       <div className="message-content-area">
         {selectedConversation ? (
           <>
             <div className="message-messages">
+              <div style={{ flex: 1, minHeight: 0 }} />
               {messages.map((msg) => (
                 <div
                   key={msg.id}
@@ -235,7 +325,6 @@ const loadConversationDetails = async (convId, bookId) => {
         )}
       </div>
 
-      {/* Récapitulatif du livre */}
       {selectedConversation && currentBook && (
         <div className="message-book-summary">
           <div className="message-book-header">
@@ -267,12 +356,10 @@ const loadConversationDetails = async (convId, bookId) => {
               <p>{currentBook.description || 'Aucune description disponible.'}</p>
             </div>
             
-            {/* Section éditeur */}
-              {/* Section éditeur */}
-              <div className="message-book-publisher">
-                <h4>Publié par :</h4>
-                <p>{selectedConversation?.publisher_name || currentBook?.user?.username || 'Non spécifié'}</p>
-              </div>
+            <div className="message-book-publisher">
+              <h4>Publié par :</h4>
+              <p>{selectedConversation?.publisher_name || currentBook?.user?.username || 'Non spécifié'}</p>
+            </div>
           </div>
         </div>
       )}

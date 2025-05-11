@@ -34,25 +34,30 @@ const Message = {
 
   // Récupérer les conversations d'un utilisateur
   getUserConversations: async (userId) => {
+  // Modifiez la requête dans /conversations
     const [conversations] = await pool.query(
-      `SELECT c.id, c.book_id, 
-              u.id as user_id, u.username, u.avatar,
-              b.title as book_title, b.image_url as book_image,
-              m.content as last_message, m.created_at as last_message_at
-       FROM conversations c
-       JOIN users u ON (u.id = CASE 
-                            WHEN c.user1_id = ? THEN c.user2_id 
-                            ELSE c.user1_id 
-                          END)
-       LEFT JOIN books b ON c.book_id = b.id
-       LEFT JOIN messages m ON m.id = (
-         SELECT id FROM messages 
-         WHERE conversation_id = c.id 
-         ORDER BY created_at DESC LIMIT 1
-       )
-       WHERE c.user1_id = ? OR c.user2_id = ?
-       ORDER BY last_message_at DESC`,
-      [userId, userId, userId]
+      `SELECT 
+        c.id, 
+        c.book_id, 
+        b.title as book_title,
+        CASE 
+          WHEN c.user1_id = ? THEN u2.id 
+          ELSE u1.id 
+        END as interlocutor_id,
+        CASE 
+          WHEN c.user1_id = ? THEN u2.username 
+          ELSE u1.username 
+        END as interlocutor_name,
+        (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message,
+        (SELECT created_at FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_date,
+        (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND is_read = 0 AND sender_id != ?) as unread_count
+      FROM conversations c
+      LEFT JOIN users u1 ON c.user1_id = u1.id
+      LEFT JOIN users u2 ON c.user2_id = u2.id
+      LEFT JOIN book b ON c.book_id = b.id
+      WHERE c.user1_id = ? OR c.user2_id = ?
+      ORDER BY last_message_date DESC`,
+      [userId, userId, userId, userId, userId]
     );
     return conversations;
   },

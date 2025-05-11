@@ -8,9 +8,14 @@ const { pool } = require('../config/db');
 
 const router = express.Router();
 
+const uploadDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../uploads'));
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     cb(null, `${Date.now()}-${file.originalname}`);
@@ -26,24 +31,26 @@ const upload = multer({
       cb(new Error('Seules les images sont autorisées'), false);
     }
   },
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+  limits: { 
+    fileSize: 5 * 1024 * 1024, // 5MB
+    files: 3
+  }
 });
 
-// Route pour ajouter un livre
 router.post('/', authenticate, upload.array('images', 3), async (req, res) => {
   try {
-    console.log('Données reçues:', {
-      body: req.body,
-      files: req.files?.map(f => f.filename),
-      userId: req.userId
-    });
+    // Vérifiez que les fichiers ont bien été reçus
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'Au moins une image est requise' });
+    }
 
+    // Vérifiez les champs requis
     const { title, author, category, condition, location, description } = req.body;
-
     if (!title || !author || !category || !condition || !location || !description) {
       return res.status(400).json({ error: 'Tous les champs sont requis' });
     }
 
+    // Créez le livre
     const bookId = await Book.create({
       title: title.trim(),
       author: author.trim(),
@@ -53,12 +60,12 @@ router.post('/', authenticate, upload.array('images', 3), async (req, res) => {
       description: description.trim()
     }, req.userId);
 
-    if (req.files && req.files.length > 0) {
-      const images = req.files.map(file => ({
-        path: file.filename
-      }));
-      await Book.addImages(bookId, images);
-    }
+    // Ajoutez les images
+    const images = req.files.map(file => ({
+      path: file.filename
+    }));
+    
+    await Book.addImages(bookId, images);
 
     res.status(201).json({
       success: true,
@@ -67,9 +74,10 @@ router.post('/', authenticate, upload.array('images', 3), async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Erreur lors de l\'ajout du livre:', error);
+    console.error('Erreur:', error);
     res.status(500).json({
-      error: error.message || 'Erreur lors de l\'ajout du livre'
+      error: 'Erreur serveur',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
@@ -91,13 +99,11 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Route pour supprimer un livre
 router.delete('/:id', authenticate, async (req, res) => {
   try {
     const bookId = req.params.id;
     const userId = req.userId;
 
-    // 1. Récupérer les informations du livre et ses images
     const [book] = await pool.query(`
       SELECT b.users_id, GROUP_CONCAT(bi.image_path) as images 
       FROM book b
@@ -114,7 +120,6 @@ router.delete('/:id', authenticate, async (req, res) => {
       return res.status(403).json({ error: 'Non autorisé - Vous n\'êtes pas le propriétaire de ce livre' });
     }
 
-    // 2. Supprimer les images physiques
     if (book[0].images) {
       const images = book[0].images.split(',');
       images.forEach(imagePath => {
@@ -128,7 +133,6 @@ router.delete('/:id', authenticate, async (req, res) => {
       });
     }
 
-    // 3. Supprimer les entrées en base de données
     await pool.query('DELETE FROM book_images WHERE book_id = ?', [bookId]);
     await pool.query('DELETE FROM book WHERE id = ?', [bookId]);
 
@@ -144,8 +148,6 @@ router.delete('/:id', authenticate, async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    console.log('Fetching book with ID:', req.params.id); // Log l'ID reçu
-
     const query = `
       SELECT 
         b.*, 
@@ -159,10 +161,8 @@ router.get('/:id', async (req, res) => {
     `;
 
     const [rows] = await pool.query(query, [req.params.id]);
-    console.log('Query results:', rows); // Log les résultats
 
     if (!rows || rows.length === 0) {
-      console.log('No book found with ID:', req.params.id);
       return res.status(404).json({ error: 'Livre non trouvé' });
     }
 
@@ -176,7 +176,6 @@ router.get('/:id', async (req, res) => {
       }
     };
 
-    console.log('Formatted book:', book); // Log le livre formaté
     res.json({ book });
     
   } catch (err) {
@@ -187,7 +186,6 @@ router.get('/:id', async (req, res) => {
     });
   }
 });
-
 
 router.put('/:id', authenticate, upload.array('images', 3), async (req, res) => {
   try {
@@ -223,7 +221,6 @@ router.put('/:id', authenticate, upload.array('images', 3), async (req, res) => 
         : [req.body.existingImages]
       : [];
 
-    // Suppression des images physiques qui ne sont plus utilisées
     const [currentImages] = await pool.query(
       'SELECT image_path FROM book_images WHERE book_id = ?',
       [bookId]

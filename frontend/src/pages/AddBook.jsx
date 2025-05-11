@@ -80,61 +80,62 @@ const AddBook = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setError(null);
+  e.preventDefault();
+  setIsSubmitting(true);
+  setError(null);
 
-    // Validation des champs obligatoires
-    const requiredFields = ['title', 'author', 'category', 'condition', 'location', 'description'];
-    const missingFields = requiredFields.filter(field => !formData[field] || formData[field].trim().length === 0);
+  // Validation des champs obligatoires
+  const requiredFields = ['title', 'author', 'category', 'condition', 'location', 'description'];
+  const missingFields = requiredFields.filter(field => !formData[field] || formData[field].trim().length === 0);
 
-    if (missingFields.length > 0) {
-      setError('Veuillez remplir tous les champs obligatoires');
-      setIsSubmitting(false);
-      return;
-    }
+  if (missingFields.length > 0) {
+    setError('Veuillez remplir tous les champs obligatoires');
+    setIsSubmitting(false);
+    return;
+  }
 
-    // Validation des images
-    if (images.length === 0) {
-      setError('Veuillez ajouter au moins une image');
-      setIsSubmitting(false);
-      return;
-    }
+  // Validation des images
+  if (images.length === 0) {
+    setError('Veuillez ajouter au moins une image');
+    setIsSubmitting(false);
+    return;
+  }
 
-    try {
-      const formDataToSend = new FormData();
-      formDataToSend.append('title', formData.title.trim());
-      formDataToSend.append('author', formData.author.trim());
-      formDataToSend.append('category', formData.category.trim());
-      formDataToSend.append('condition', formData.condition.trim());
-      formDataToSend.append('location', formData.location.trim());
-      formDataToSend.append('description', formData.description.trim());
+  try {
+    const formDataToSend = new FormData();
+    
+    // Ajouter les champs texte
+    formDataToSend.append('title', formData.title.trim());
+    formDataToSend.append('author', formData.author.trim());
+    formDataToSend.append('category', formData.category.trim());
+    formDataToSend.append('condition', formData.condition.trim());
+    formDataToSend.append('location', formData.location.trim());
+    formDataToSend.append('description', formData.description.trim());
 
-      // Ajouter les images
-      images.forEach((image) => {
-        formDataToSend.append('images', image);
-      });
+    // Ajouter les images
+    images.forEach((image) => {
+      formDataToSend.append('images', image);
+    });
 
-      // Effectuer la requête POST
-      await axios.post(`${API_URL}/api/books`, formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        },
-        withCredentials: true
-      });
+    // Effectuer la requête POST
+    const response = await axios.post(`${API_URL}/api/books`, formDataToSend, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      },
+      withCredentials: true
+    });
 
-      // Une fois l'ajout du livre terminé, rediriger vers la page d'accueil avec un état
-      navigate('/', { state: { bookAdded: true } });
-
-      alert("Livre ajouté avec succès !");
-      
-    } catch (err) {
-      console.error('Erreur lors de l\'ajout du livre:', err);
-      setError(err.message || 'Erreur lors de l\'ajout du livre');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    // Redirection après succès
+    navigate('/', { state: { bookAdded: true } });
+    alert("Livre ajouté avec succès !");
+    
+  } catch (err) {
+    console.error('Erreur lors de l\'ajout du livre:', err);
+    setError(err.response?.data?.error || 'Erreur lors de l\'ajout du livre');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   return (
     <div className="add-book-container">

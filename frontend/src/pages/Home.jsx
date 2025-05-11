@@ -14,7 +14,7 @@ const HomePage = ({ isAuthenticated, currentUser, onOpenLogin }) => {
   useEffect(() => {
     if (location.state?.showLogin) {
       onOpenLogin();
-  
+      
       // Nettoie l'état pour éviter que le modal réapparaisse
       navigate(location.pathname, {
         replace: true,
@@ -24,8 +24,12 @@ const HomePage = ({ isAuthenticated, currentUser, onOpenLogin }) => {
         },
       });
     }
-  }, [location.state, onOpenLogin, navigate, location.pathname]);
-  
+
+    // Redirige vers add-book si l'utilisateur vient de se connecter
+    if (isAuthenticated && location.state?.redirectAfterLogin === '/add-book') {
+      navigate('/add-book');
+    }
+  }, [location.state, isAuthenticated, onOpenLogin, navigate, location.pathname]);
 
   const fetchBooks = async () => {
     try {
@@ -46,17 +50,19 @@ const HomePage = ({ isAuthenticated, currentUser, onOpenLogin }) => {
   }, []);
 
   const handleAddBookClick = () => {
-    if (isAuthenticated) {
-      navigate('/add-book');
-    } else {
-      navigate('/', {
-        state: {
-          showLogin: true,
-          redirectAfterLogin: '/add-book',
-        },
-      });
-    }
-  };
+  if (isAuthenticated) {
+    navigate('/add-book');
+  } else {
+    navigate('/', {
+      state: {
+        showLogin: true,
+        redirectAfterLogin: '/add-book', // Ceci sera utilisé après la connexion
+      },
+      replace: true
+    });
+    onOpenLogin();
+  }
+};
   
   return (
     <>

@@ -1,14 +1,58 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const path = require('path');
+const fs = require('fs');
 const { pool } = require('../config/db');
 const router = express.Router();
+const multer = require('multer');
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, '../uploads'));
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `avatar_${req.userId}${ext}`);
+  }
+});
+
+const upload = multer({ storage });
+
+
+
+// Middleware d'authentification
+const authenticate = async (req, res, next) => {
+  const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ error: "Authentication required" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_secret_key');
+    const [users] = await pool.query('SELECT id FROM users WHERE id = ?', [decoded.userId]);
+    
+    if (users.length === 0) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+
+    req.userId = decoded.userId;
+    next();
+  } catch (err) {
+    res.status(401).json({ error: "Invalid token" });
+  }
+};
 
 router.post('/register', async (req, res) => {
   const { username, email, password } = req.body;
-  const hashedPassword = await bcrypt.hash(password, 10);
+  
+  if (!username || !email || !password) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
 
   try {
+    const hashedPassword = await bcrypt.hash(password, 10);
     const [result] = await pool.query(
       'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
       [username, email, hashedPassword]
@@ -24,6 +68,10 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required" });
+  }
 
   try {
     const [users] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
@@ -51,9 +99,9 @@ router.post('/login', async (req, res) => {
     }).json({
       userId: user.id,
       username: user.username,
-      email: user.email
+      email: user.email,
+      avatar: user.avatar
     });
-
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -63,23 +111,113 @@ router.post('/logout', (req, res) => {
   res.clearCookie('token').json({ message: "Déconnexion réussie" });
 });
 
-router.get('/me', async (req, res) => {
-  const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
-  
-  if (!token) {
-    return res.status(401).json({ error: "Authentication required" });
-  }
-
+router.get('/me', authenticate, async (req, res) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_secret_key');
-    const [users] = await pool.query('SELECT id, username, email FROM users WHERE id = ?', [decoded.userId]);
+    const [users] = await pool.query(
+      'SELECT id, username, email, avatar FROM users WHERE id = ?',
+      [req.userId]
+    );
     
     if (users.length === 0) {
       return res.status(404).json({ error: "User not found" });
     }
     res.json(users[0]);
   } catch (err) {
-    res.status(401).json({ error: "Invalid token" });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/profile', authenticate, async (req, res) => {
+  try {
+    const [users] = await pool.query(
+      'SELECT id, username, email, avatar, location, bio FROM users WHERE id = ?',
+      [req.userId]
+    );
+    
+    if (users.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.json(users[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put('/profile', authenticate, async (req, res) => {
+  const { username, location, bio } = req.body;
+  
+  if (!username) {
+    return res.status(400).json({ error: "Username is required" });
+  }
+
+  try {
+    await pool.query(
+      'UPDATE users SET username = ?, location = ?, bio = ? WHERE id = ?',
+      [username, location, bio, req.userId]
+    );
+    res.json({ message: "Profile updated successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put('/avatar', authenticate, upload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No avatar file uploaded" });
+    }
+
+    const fileName = `avatar_${req.userId}${path.extname(req.file.originalname)}`;
+    const filePath = path.join(__dirname, '../uploads', fileName);
+
+    // Supprimer l'ancien avatar s'il existe
+    const [users] = await pool.query('SELECT avatar FROM users WHERE id = ?', [req.userId]);
+    if (users[0].avatar) {
+      const oldAvatarPath = path.join(__dirname, '../uploads', path.basename(users[0].avatar));
+      if (fs.existsSync(oldAvatarPath)) {
+        fs.unlinkSync(oldAvatarPath);
+      }
+    }
+
+    // Renommer le fichier téléchargé
+    fs.renameSync(req.file.path, filePath);
+    
+    // Mettre à jour la base de données
+    await pool.query(
+      'UPDATE users SET avatar = ? WHERE id = ?',
+      [`/uploads/${fileName}`, req.userId]
+    );
+    
+    res.json({ 
+      message: "Avatar updated successfully",
+      avatarUrl: `/uploads/${fileName}`
+    });
+  } catch (err) {
+    console.error('Avatar update error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/avatar', authenticate, async (req, res) => {
+  try {
+    // Récupérer le chemin de l'avatar actuel
+    const [users] = await pool.query('SELECT avatar FROM users WHERE id = ?', [req.userId]);
+    if (users[0].avatar) {
+      const avatarPath = path.join(__dirname, '../uploads', path.basename(users[0].avatar));
+      if (fs.existsSync(avatarPath)) {
+        fs.unlinkSync(avatarPath);
+      }
+    }
+
+    // Mettre à jour la base de données
+    await pool.query(
+      'UPDATE users SET avatar = NULL WHERE id = ?',
+      [req.userId]
+    );
+    
+    res.json({ message: "Avatar deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

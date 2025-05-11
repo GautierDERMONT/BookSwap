@@ -11,7 +11,7 @@ class Book {
     
     const params = [
       bookData.title.trim(),
-      bookData.author.trim(), // Bien inclus maintenant
+      bookData.author.trim(),
       bookData.category.trim(),
       bookData.condition.trim(),
       bookData.location.trim(),

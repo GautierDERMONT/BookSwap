@@ -122,44 +122,13 @@
   background-color: white;
 }
 
-.message-header {
-  padding: 12px 15px;
-  border-bottom: 1px solid #eee;
-  position: sticky;
-  top: 0;
-  background: white;
-  z-index: 1;
-}
-
-.message-user-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.message-user-info img {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.message-user-info h3 {
-  margin: 0;
-  font-size: 16px;
-}
-
-.message-user-info p {
-  margin: 2px 0 0;
-  font-size: 13px;
-  color: #666;
-}
-
 .message-messages {
   flex: 1;
   padding: 15px;
   overflow-y: auto;
-  background-color: #f5f7fa;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .message-bubble {
@@ -354,6 +323,21 @@
   100% { transform: rotate(360deg); }
 }
 
+/* Badge pour messages non lus */
+.unread-badge {
+  display: inline-block;
+  background-color: #09b1ba;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  text-align: center;
+  line-height: 18px;
+  font-size: 10px;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
 /* Responsive */
 @media (max-width: 1200px) {
   .message-conversation-list {
@@ -379,7 +363,6 @@
   }
 }
 
-
 /* Bouton de suppression de conversation */
 .delete-conversation-btn {
   background: none;
@@ -402,7 +385,6 @@
   color: #ff4d4f;
 }
 
-/* Ajustement pour l'élément de conversation */
 .message-conversation-item {
   display: flex;
   align-items: center;
@@ -412,12 +394,6 @@
   transition: all 0.2s;
   min-height: 60px;
   gap: 10px;
-}
-
-.message-conv-info {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
 }
 
 .message-book-publisher {
@@ -438,13 +414,7 @@
   color: #666;
 }
 
-/* Conversation non lue */
-.message-conversation-item.unread {
-  background-color: #e0f7fa; /* Couleur de fond différente pour les messages non lus */
-  border-left: 5px solid #09b1ba; /* Bordure sur le côté gauche */
+/* Animation de sélection */
+.message-conversation-item {
+  transition: all 0.2s ease;
 }
-
-.message-conv-avatar.unread img {
-  border: 2px solid #09b1ba; /* Ajouter une bordure sur l'avatar pour mettre en avant */
-}
-

@@ -5,21 +5,22 @@ const api = axios.create({
   withCredentials: true,
 });
 
-api.interceptors.request.use((config) => {
-  return config;
-});
-
 export const addBook = async (formData) => {
   try {
     const response = await api.post('/books', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
-      }
+      },
+      timeout: 10000
     });
     return response.data;
   } catch (error) {
-    console.error('Full error:', error.response?.data || error.message);
-    throw new Error(error.response?.data?.error || 'Server error');
+    console.error('Error:', {
+      message: error.message,
+      response: error.response?.data,
+      stack: error.stack
+    });
+    throw error;
   }
 };
 

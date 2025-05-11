@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, Heart, MessageCircle, User, Plus, LogOut } from 'react-feather';
+import { Search, Heart, MessageCircle, User, Plus, LogOut, ChevronDown } from 'react-feather';
 import api from '../../services/api';
 import './Header.css';
 import logo from '../../assets/logo.png';
@@ -12,7 +12,33 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
   const [showDropdown, setShowDropdown] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const navigate = useNavigate();
-  const location = useLocation(); // <--- Ajout pour détecter les changements d'URL
+  const location = useLocation();
+
+  const getDefaultAvatar = (username) => {
+    if (!username) return <User size={20} className="header-profile-icon" />;
+    const firstLetter = username.charAt(0).toUpperCase();
+    const colors = ['#FF5733', '#33FF57', '#3357FF', '#F333FF', '#33FFF3'];
+    const color = colors[firstLetter.charCodeAt(0) % colors.length];
+    return (
+      <div 
+        className="header-default-avatar-icon"
+        style={{
+          backgroundColor: color,
+          width: '32px',
+          height: '32px',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'white',
+          fontSize: '1rem',
+          fontWeight: 'bold'
+        }}
+      >
+        {firstLetter}
+      </div>
+    );
+  };
 
   const addFilter = () => {
     if (newFilter && !activeFilters.includes(newFilter)) {
@@ -26,11 +52,7 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
   };
 
   const handleAddBookClick = () => {
-    if (isAuthenticated) {
-      navigate('/add-book');
-    } else {
-      onOpenLogin();
-    }
+    isAuthenticated ? navigate('/add-book') : onOpenLogin();
   };
 
   const handleFavoritesClick = () => {
@@ -44,21 +66,15 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
 
   const handleMessageClick = () => {
     if (isAuthenticated) {
-      navigate('/messages', { 
-        state: { 
-          fromHeader: true,
-          redirectAfterLogin: '/messages' 
-        } 
-      });
+      navigate('/messages', { state: { fromHeader: true, redirectAfterLogin: '/messages' } });
     } else {
       onOpenLogin();
-      navigate('/', { 
-        state: { 
-          showLogin: true, 
-          redirectAfterLogin: '/messages' 
-        } 
-      });
+      navigate('/', { state: { showLogin: true, redirectAfterLogin: '/messages' } });
     }
+  };
+
+  const handleProfileClick = () => {
+    isAuthenticated ? navigate('/profile') : onOpenLogin();
   };
 
   const handleSearch = (e) => {
@@ -81,36 +97,32 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchUnreadMessages();
-    } else {
-      setUnreadMessages(0);
-    }
-  }, [isAuthenticated, location.pathname]); // <-- se met à jour au changement de page
+    isAuthenticated ? fetchUnreadMessages() : setUnreadMessages(0);
+  }, [isAuthenticated, location.pathname]);
 
   return (
-    <header className="app-header">
+    <header className="header-app">
       <div className="header-top">
-        <Link to="/" className="logo-link">
-          <img src={logo} alt="BookSwap" className="logo" />
+        <Link to="/" className="header-logo-link">
+          <img src={logo} alt="BookSwap" className="header-logo" />
         </Link>
 
-        <form className="search-container" onSubmit={handleSearch}>
-          <div className="search-bar">
+        <form className="header-search-container" onSubmit={handleSearch}>
+          <div className="header-search-bar">
             <input
               type="text"
               placeholder="Rechercher des livres..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <button type="submit" className="search-button">
+            <button type="submit" className="header-search-button">
               <Search size={18} />
             </button>
           </div>
         </form>
 
-        <div className="filters-container">
-          <div className="filter-input-container">
+        <div className="header-filters-container">
+          <div className="header-filter-input-container">
             <input
               type="text"
               placeholder="Ajouter un filtre (ex: Roman, Paris, Neuf...)"
@@ -118,17 +130,17 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
               onChange={(e) => setNewFilter(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && addFilter()}
             />
-            <button onClick={addFilter} className="add-filter-button">
+            <button onClick={addFilter} className="header-add-filter-button">
               <Plus size={16} />
             </button>
           </div>
 
           {activeFilters.map((filter) => (
-            <div key={filter} className="active-filter">
+            <div key={filter} className="header-active-filter">
               {filter}
               <button 
                 onClick={() => removeFilter(filter)} 
-                className="remove-filter"
+                className="header-remove-filter"
               >
                 ×
               </button>
@@ -136,20 +148,20 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
           ))}
         </div>
 
-        <div className="user-actions">
+        <div className="header-user-actions">
           {!isAuthenticated ? (
             <>
-              <button className="auth-button" onClick={onOpenLogin}>
+              <button className="header-auth-button" onClick={onOpenLogin}>
                 Connexion
               </button>
-              <button className="auth-button primary" onClick={onOpenSignup}>
+              <button className="header-auth-button header-primary" onClick={onOpenSignup}>
                 Inscription
               </button>
             </>
           ) : (
-            <div className="user-menu">
+            <div className="header-user-menu">
               <button 
-                className="menu-button"
+                className="header-menu-button"
                 onClick={handleAddBookClick}
               >
                 <Plus size={16} className="mr-1" />
@@ -157,7 +169,7 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
               </button>
 
               <button 
-                className="menu-icon"
+                className="header-menu-icon"
                 onClick={handleFavoritesClick}
                 title="Favoris"
               >
@@ -165,31 +177,59 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
               </button>
 
               <button 
-                className="menu-icon" 
+                className="header-menu-icon" 
                 onClick={handleMessageClick}
                 title="Messagerie"
               >
                 <MessageCircle size={20} />
                 {unreadMessages > 0 && (
-                  <span className="unread-badge">{unreadMessages}</span> 
+                  <span className="header-unread-badge">{unreadMessages}</span> 
                 )}
               </button>
 
               <div 
-                className="profile-container"
+                className="header-profile-container"
                 onMouseEnter={() => setShowDropdown(true)}
                 onMouseLeave={() => setShowDropdown(false)}
               >
-                <div className="profile-info">
-                  <User size={20} className="profile-icon" />
-                  <span className="username">{currentUser?.username}</span>
+                <div className="header-profile-info">
+                  <div className="header-avatar-wrapper" onClick={handleProfileClick}>
+                    {currentUser?.avatar ? (
+                      <img 
+                        src={`http://localhost:5001${currentUser.avatar}`} 
+                        alt="Avatar" 
+                        className="header-profile-avatar"
+                      />
+                    ) : (
+                      getDefaultAvatar(currentUser?.username)
+                    )}
+                  </div>
+                  <ChevronDown 
+                    size={16} 
+                    className={`header-profile-arrow ${showDropdown ? 'open' : ''}`}
+                  />
                 </div>
-                
+
                 {showDropdown && (
-                  <button className="logout-button" onClick={handleLogoutClick}>
-                    <LogOut size={16} className="mr-1" />
-                    Déconnexion
-                  </button>
+                  <div className="header-dropdown-menu">
+                    <div 
+                      className="header-dropdown-item"
+                      onClick={() => {
+                        navigate('/profile');
+                        setShowDropdown(false);
+                      }}
+                    >
+                      <User size={16} className="dropdown-icon" />
+                      <span>Mon Profil</span>
+                    </div>
+                    <div 
+                      className="header-dropdown-item"
+                      onClick={handleLogoutClick}
+                    >
+                      <LogOut size={16} className="dropdown-icon" />
+                      <span>Déconnexion</span>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>

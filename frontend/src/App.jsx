@@ -10,14 +10,17 @@ import AddBook from './pages/AddBook';
 import BookDetails from './pages/BookDetails';
 import EditBook from './pages/EditBook';
 import Messages from './pages/Messages';
+import Profile from './pages/Profile';
 import './App.css';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [activeModal, setActiveModal] = useState(null);
+  const [loading, setLoading] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
+  const params = useParams();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -26,14 +29,10 @@ function App() {
           withCredentials: true,
           validateStatus: (status) => status < 500
         });
-        
+
         if (response.status === 200) {
           setIsAuthenticated(true);
           setCurrentUser(response.data);
-          
-          if (location.state?.redirectAfterLogin && !location.state?.fromLogout) {
-            navigate(location.state.redirectAfterLogin);
-          }
         } else {
           setIsAuthenticated(false);
           setCurrentUser(null);
@@ -41,39 +40,45 @@ function App() {
       } catch (error) {
         console.error('Auth check error:', error);
         setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
       }
     };
 
     checkAuth();
-  }, [location]);
+  }, [location.pathname]);
 
-  const handleLogin = async (credentials) => {
-    try {
-      const response = await axios.post(
-        'http://localhost:5001/api/auth/login', 
-        credentials,
-        { withCredentials: true }
-      );
-      
-      setIsAuthenticated(true);
-      setCurrentUser({
-        id: response.data.userId,
-        username: response.data.username,
-        email: response.data.email
-      });
-      setActiveModal(null);
+const handleLogin = async (credentials) => {
+  try {
+    const response = await axios.post(
+      'http://localhost:5001/api/auth/login', 
+      credentials,
+      { withCredentials: true }
+    );
 
-      window.location.reload();
+    setIsAuthenticated(true);
+    setCurrentUser({
+      id: response.data.userId,
+      username: response.data.username,
+      email: response.data.email,
+      avatar: response.data.avatar
+    });
+    setActiveModal(null);
+   
 
-      
-      if (location.state?.redirectAfterLogin) {
-        navigate(location.state.redirectAfterLogin);
-      }
-    } catch (error) {
-      console.error('Login failed:', error);
-      alert(error.response?.data?.error || 'Échec de la connexion');
+    
+    // Gérer la redirection après connexion
+    if (location.state?.redirectAfterLogin) {
+      navigate(location.state.redirectAfterLogin);
+    } else {
+      navigate('/');
     }
-  };
+    
+  } catch (error) {
+    console.error('Login failed:', error);
+    alert(error.response?.data?.error || 'Échec de la connexion');
+  }
+};
 
   const handleSignup = async (userData) => {
     try {
@@ -99,14 +104,16 @@ function App() {
       );
       setIsAuthenticated(false);
       setCurrentUser(null);
-      
       window.location.reload();
-
       navigate('/', { state: { fromLogout: true }, replace: true });
     } catch (error) {
       console.error('Logout failed:', error);
     }
   };
+
+  if (loading) {
+    return <div className="loading-screen">Chargement...</div>;
+  }
 
   return (
     <div className="app">
@@ -117,7 +124,7 @@ function App() {
         onOpenSignup={() => setActiveModal('signup')}
         onLogout={handleLogout}
       />
-      
+
       <Routes>
         <Route path="/" element={
           <HomePage 
@@ -126,7 +133,6 @@ function App() {
             onOpenLogin={() => setActiveModal('login')} 
           />
         } />
-        
         <Route path="/books" element={<BooksPage />} />
         <Route path="/books/:id" element={
           <BookDetails 
@@ -137,26 +143,26 @@ function App() {
         <Route path="/books/:id/edit" element={
           isAuthenticated ? <EditBook /> : <Navigate to="/" />
         } />
-        
         <Route path="/add-book" element={
           isAuthenticated ? <AddBook /> : <Navigate to="/" />
         } />
-        
-        {/* Routes pour les messages */}
+        <Route path="/profile" element={
+          isAuthenticated ? 
+            <Profile currentUser={currentUser} /> : 
+            <Navigate to="/" state={{ redirectAfterLogin: '/profile' }} />
+        } />
         <Route path="/messages" element={
           isAuthenticated ? 
             <Messages currentUser={currentUser} /> : 
             <Navigate to="/" state={{ redirectAfterLogin: '/messages' }} />
         } />
-        
         <Route path="/messages/:conversationId" element={
           isAuthenticated ? 
             <Messages currentUser={currentUser} /> : 
-            <Navigate to="/" state={{ redirectAfterLogin: `/messages/${useParams().conversationId}` }} />
+            <Navigate to="/" state={{ redirectAfterLogin: `/messages/${params.conversationId}` }} />
         } />
       </Routes>
 
-      {/* Modales */}
       {activeModal === 'login' && (
         <LoginModal
           onClose={() => setActiveModal(null)}

@@ -86,36 +86,39 @@ const BookDetails = ({ currentUser, onOpenLogin }) => {
   };
 
   const handleMessageClick = async () => {
-    if (!currentUser) {
-      onOpenLogin();
-      return;
-    }
-  
-    try {
-      const response = await api.post('/conversations', {
+  if (!currentUser) {
+    onOpenLogin();
+    return;
+  }
+
+  try {
+    const response = await api.post('/conversations', {
+      bookId: book.id,
+      recipientId: book.user.id
+    }, { withCredentials: true });
+
+    navigate(`/messages/${response.data.conversationId}`, {
+      state: {
         bookId: book.id,
-        recipientId: book.user.id
-      }, { withCredentials: true });
-  
-      navigate(`/messages/${response.data.conversationId}`, {
-        state: {
-          bookInfo: {
-            id: book.id,
-            title: book.title,
-            bookLocation: book.location,
-            image: book.images?.[0]
-          },
-          interlocutor: {
-            id: book.user.id,
-            username: book.user.username
-          }
+        recipientId: book.user.id,
+        bookInfo: {
+          id: book.id,
+          title: book.title,
+          bookLocation: book.location,
+          image: book.images?.[0]
+        },
+        interlocutor: {
+          id: book.user.id,
+          username: book.user.username,
+          avatar: book.user.avatar
         }
-      });
-    } catch (error) {
-      console.error("Erreur lors de la création de la conversation:", error);
-      alert(error.response?.data?.error || "Impossible de démarrer la conversation");
-    }
-  };
+      }
+    });
+  } catch (error) {
+    console.error("Erreur lors de la création de la conversation:", error);
+    alert(error.response?.data?.error || "Impossible de démarrer la conversation");
+  }
+};
   
 
   if (loading) return <div className="book-details-loading">Chargement...</div>;
