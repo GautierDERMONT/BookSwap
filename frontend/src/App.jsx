@@ -11,6 +11,7 @@ import BookDetails from './pages/BookDetails';
 import EditBook from './pages/EditBook';
 import Messages from './pages/Messages';
 import Profile from './pages/Profile';
+import SearchResults from './pages/SearchResults';
 import './App.css';
 
 function App() {
@@ -161,6 +162,14 @@ const handleLogin = async (credentials) => {
             <Messages currentUser={currentUser} /> : 
             <Navigate to="/" state={{ redirectAfterLogin: `/messages/${params.conversationId}` }} />
         } />
+
+          <Route path="/search" element={
+            <SearchResults 
+              isAuthenticated={isAuthenticated} 
+              currentUser={currentUser} 
+              onOpenLogin={() => setActiveModal('login')} 
+            />
+          } />
       </Routes>
 
       {activeModal === 'login' && (

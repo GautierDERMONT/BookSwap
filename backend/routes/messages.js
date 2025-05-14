@@ -19,6 +19,10 @@ router.get('/conversations', authenticate, async (req, res) => {
           WHEN c.user1_id = ? THEN u2.username 
           ELSE u1.username 
         END as interlocutor_name,
+        CASE
+          WHEN c.user1_id = ? THEN u2.avatar
+          ELSE u1.avatar
+        END as interlocutor_avatar,
         (SELECT content FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message,
         (SELECT created_at FROM messages WHERE conversation_id = c.id ORDER BY created_at DESC LIMIT 1) as last_message_date,
         (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id AND is_read = 0 AND sender_id != ?) as unread_count
@@ -28,7 +32,7 @@ router.get('/conversations', authenticate, async (req, res) => {
        LEFT JOIN book b ON c.book_id = b.id
        WHERE c.user1_id = ? OR c.user2_id = ?
        ORDER BY last_message_date DESC`,
-      [req.userId, req.userId, req.userId, req.userId, req.userId]
+      [req.userId, req.userId, req.userId, req.userId, req.userId, req.userId]
     );
 
     res.json({
@@ -39,6 +43,7 @@ router.get('/conversations', authenticate, async (req, res) => {
         book_image: conv.book_image ? `http://localhost:5001/uploads/${conv.book_image}` : null,
         interlocutor_id: conv.interlocutor_id,
         interlocutor_name: conv.interlocutor_name,
+        interlocutor_avatar: conv.interlocutor_avatar ? `http://localhost:5001${conv.interlocutor_avatar}` : null,
         last_message: conv.last_message || "Nouvelle conversation",
         last_message_date: conv.last_message_date || new Date().toISOString(),
         unread_count: conv.unread_count || 0
@@ -116,6 +121,25 @@ router.post('/conversations', authenticate, async (req, res) => {
   }
 });
 
+// Ajoutez cette route dans messages.js
+router.post('/conversations/:conversationId/mark-as-read', authenticate, async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.userId;
+
+    await pool.query(
+      `UPDATE messages SET is_read = TRUE 
+       WHERE conversation_id = ? AND sender_id != ?`,
+      [conversationId, userId]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error marking as read:', err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
 router.get('/conversations/:conversationId/messages', authenticate, async (req, res) => {
   try {
     const { conversationId } = req.params;
@@ -136,6 +160,7 @@ router.get('/conversations/:conversationId/messages', authenticate, async (req, 
         m.id,
         m.sender_id,
         u.username as sender_name,
+        u.avatar as sender_avatar,
         m.content,
         m.created_at,
         m.is_read

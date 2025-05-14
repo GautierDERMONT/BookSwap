@@ -7,12 +7,23 @@ import logo from '../../assets/logo.png';
 
 const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLogout }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilters, setActiveFilters] = useState([]);
-  const [newFilter, setNewFilter] = useState('');
+  const [activeFilters, setActiveFilters] = useState({
+    location: [],
+    condition: [],
+    genre: []
+  });
+  const [newFilter, setNewFilter] = useState({
+    type: 'location',
+    value: ''
+  });
   const [showDropdown, setShowDropdown] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+
+  const conditionOptions = ['Neuf', 'Très bon état', 'Bon état', 'Usagé'];
 
   const getDefaultAvatar = (username) => {
     if (!username) return <User size={20} className="header-profile-icon" />;
@@ -41,14 +52,25 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
   };
 
   const addFilter = () => {
-    if (newFilter && !activeFilters.includes(newFilter)) {
-      setActiveFilters([...activeFilters, newFilter]);
-      setNewFilter('');
-    }
+    const trimmedValue = newFilter.value.trim();
+    if (!trimmedValue) return;
+
+    setActiveFilters((prev) => ({
+      ...prev,
+      [newFilter.type]: [trimmedValue]
+    }));
+    setNewFilter({ ...newFilter, value: '' });
   };
 
-  const removeFilter = (filterToRemove) => {
-    setActiveFilters(activeFilters.filter(f => f !== filterToRemove));
+  const removeFilter = (type) => {
+    setActiveFilters({
+      ...activeFilters,
+      [type]: []
+    });
+  };
+
+  const handleFilterTypeChange = (type) => {
+    setNewFilter({ ...newFilter, type, value: '' });
   };
 
   const handleAddBookClick = () => {
@@ -77,10 +99,34 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
     isAuthenticated ? navigate('/profile') : onOpenLogin();
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
-  };
+
+const handleSearch = (e) => {
+  e.preventDefault();
+  const queryParams = new URLSearchParams();
+
+  // Ajouter le terme de recherche seulement s'il n'est pas vide
+  if (searchQuery.trim()) {
+    queryParams.append('q', searchQuery.trim());
+  }
+
+  // Ajouter les filtres actifs
+  if (activeFilters.location.length > 0) {
+    queryParams.append('location', activeFilters.location[0]);
+  }
+  if (activeFilters.condition.length > 0) {
+    queryParams.append('condition', activeFilters.condition[0]);
+  }
+  if (activeFilters.genre.length > 0) {
+    queryParams.append('genre', activeFilters.genre[0]);
+  }
+
+  // Naviguer seulement s'il y a soit un terme de recherche, soit des filtres
+  if (searchQuery.trim() || Object.values(activeFilters).some(filters => filters.length > 0)) {
+    navigate(`/search?${queryParams.toString()}`);
+    setShowSuggestions(false);
+  }
+};
+
 
   const handleLogoutClick = () => {
     onLogout();
@@ -96,9 +142,26 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
     }
   };
 
+  const fetchSearchSuggestions = async (query) => {
+    try {
+      const response = await api.get(`/books/suggestions?q=${encodeURIComponent(query)}`);
+      setSearchSuggestions(response.data.suggestions);
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+    }
+  };
+
   useEffect(() => {
     isAuthenticated ? fetchUnreadMessages() : setUnreadMessages(0);
   }, [isAuthenticated, location.pathname]);
+
+  useEffect(() => {
+    if (searchQuery.length > 2) {
+      fetchSearchSuggestions(searchQuery);
+    } else {
+      setSearchSuggestions([]);
+    }
+  }, [searchQuery]);
 
   return (
     <header className="header-app">
@@ -114,38 +177,100 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
               placeholder="Rechercher des livres..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             />
             <button type="submit" className="header-search-button">
               <Search size={18} />
             </button>
+            {showSuggestions && searchSuggestions.length > 0 && (
+              <div className="search-suggestions">
+                {searchSuggestions.map((suggestion, index) => (
+                  <div 
+                    key={index} 
+                    className="suggestion-item"
+                    onClick={() => {
+                      setSearchQuery(suggestion);
+                      setShowSuggestions(false);
+                      navigate(`/search?q=${encodeURIComponent(suggestion)}`);
+                    }}
+                  >
+                    {suggestion}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </form>
 
         <div className="header-filters-container">
           <div className="header-filter-input-container">
-            <input
-              type="text"
-              placeholder="Ajouter un filtre (ex: Roman, Paris, Neuf...)"
-              value={newFilter}
-              onChange={(e) => setNewFilter(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && addFilter()}
-            />
-            <button onClick={addFilter} className="header-add-filter-button">
+            <select
+              value={newFilter.type}
+              onChange={(e) => handleFilterTypeChange(e.target.value)}
+              className="header-filter-type-select"
+            >
+              <option value="location">Localisation</option>
+              <option value="condition">État</option>
+              <option value="genre">Genre</option>
+            </select>
+            
+            {newFilter.type === 'condition' ? (
+              <select
+                value={newFilter.value}
+                onChange={(e) => setNewFilter({ ...newFilter, value: e.target.value })}
+                className="header-filter-value-select"
+              >
+                <option value="">Sélectionner un état</option>
+                {conditionOptions.map((option) => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                placeholder={newFilter.type === 'location' 
+                  ? "Ajouter une localisation..." 
+                  : "Ajouter un genre..."}
+                value={newFilter.value}
+                onChange={(e) => setNewFilter({ ...newFilter, value: e.target.value })}
+                onKeyPress={(e) => e.key === 'Enter' && addFilter()}
+                className="header-filter-value-input"
+              />
+            )}
+            
+            <button 
+              onClick={addFilter} 
+              className="header-add-filter-button"
+              disabled={!newFilter.value}
+            >
               <Plus size={16} />
             </button>
           </div>
 
-          {activeFilters.map((filter) => (
-            <div key={filter} className="header-active-filter">
-              {filter}
-              <button 
-                onClick={() => removeFilter(filter)} 
-                className="header-remove-filter"
-              >
-                ×
-              </button>
+          {Object.values(activeFilters).some(filters => filters.length > 0) && (
+            <div className="header-active-filters-wrapper">
+              {Object.entries(activeFilters).map(([type, filters]) => (
+                filters.length > 0 && (
+                  <div key={type} className="header-filter-category">
+                    <span className="header-filter-category-label">
+                      {type === 'location' ? 'Localisation:' : 
+                       type === 'condition' ? 'État:' : 'Genre:'}
+                    </span>
+                    <div className="header-active-filter">
+                      {filters[0]}
+                      <button 
+                        onClick={() => removeFilter(type)} 
+                        className="header-remove-filter"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                )
+              ))}
             </div>
-          ))}
+          )}
         </div>
 
         <div className="header-user-actions">

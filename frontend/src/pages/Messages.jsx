@@ -49,6 +49,7 @@ const Messages = ({ currentUser }) => {
               book_id: bookId,
               interlocutor_id: recipientId,
               interlocutor_name: location.state?.interlocutor?.username,
+              interlocutor_avatar: location.state?.interlocutor?.avatar,
               ...location.state?.bookInfo
             };
             
@@ -119,10 +120,8 @@ const Messages = ({ currentUser }) => {
 
   useEffect(() => {
     if (selectedConversation) {
-      // Marquer les messages comme lus
       api.post(`/conversations/${selectedConversation.id}/mark-as-read`);
       
-      // Mettre à jour la liste des conversations
       setConversations(prev => prev.map(conv => {
         if (conv.id === selectedConversation.id) {
           return { ...conv, unread_count: 0 };
@@ -153,7 +152,8 @@ const Messages = ({ currentUser }) => {
         if (conv) {
           setInterlocutor({
             id: conv.interlocutor_id,
-            username: conv.interlocutor_name
+            username: conv.interlocutor_name,
+            avatar: conv.interlocutor_avatar
           });
         }
       }
@@ -241,8 +241,7 @@ const Messages = ({ currentUser }) => {
             {conversations.map((conv) => (
               <div
                 key={conv.id}
-                className={`message-conversation-item 
-                  ${selectedConversation?.id === conv.id ? 'active' : ''}`}
+                className={`message-conversation-item ${selectedConversation?.id === conv.id ? 'active' : ''}`}
                 onClick={async () => {
                   if (selectedConversation?.id !== conv.id) {
                     setSelectedConversation(conv);
@@ -251,6 +250,13 @@ const Messages = ({ currentUser }) => {
                   }
                 }}
               >
+                {conv.interlocutor_avatar && (
+                  <img 
+                    src={conv.interlocutor_avatar}
+                    alt={`Avatar de ${conv.interlocutor_name}`}
+                    className="message-conv-avatar"
+                  />
+                )}
                 <div className="message-conv-info">
                   <div className="message-conv-header">
                     <h4 className="message-conv-name">{conv.interlocutor_name}</h4>
@@ -289,20 +295,26 @@ const Messages = ({ currentUser }) => {
           <>
             <div className="message-messages">
               <div style={{ flex: 1, minHeight: 0 }} />
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`message-bubble ${msg.sender_id === currentUser.id ? 'sent' : 'received'}`}
-                >
-                  <p>{msg.content}</p>
-                  <div className="message-meta">
-                    <span>{formatDate(msg.created_at)}</span>
-                    {msg.sender_id === currentUser.id && (
-                      <span>{msg.is_read ? <FiCheck /> : <FiClock />}</span>
+                {messages.map((msg) => (
+                  <div key={msg.id} className={`message-bubble ${msg.sender_id === currentUser.id ? 'sent' : 'received'}`}>
+                    {msg.sender_id !== currentUser.id && msg.sender_avatar && (
+                      <img 
+                        src={`http://localhost:5001${msg.sender_avatar}`}
+                        alt={`Avatar de ${msg.sender_name}`}
+                        className="message-sender-avatar"
+                      />
                     )}
+                    <div className="message-content">
+                      <p>{msg.content}</p>
+                      <div className="message-meta">
+                        <span>{formatDate(msg.created_at)}</span>
+                        {msg.sender_id === currentUser.id && (
+                          <span>{msg.is_read ? <FiCheck /> : <FiClock />}</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
               <div ref={messagesEndRef} />
             </div>
             
@@ -350,6 +362,10 @@ const Messages = ({ currentUser }) => {
               <span className="message-book-location">
                 <FiMapPin /> {currentBook.location || 'Non spécifiée'}
               </span>
+
+               <span className={`message-book-availability availability-${currentBook.availability?.toLowerCase()}`}>
+                  {currentBook.availability || 'Non Spécifié'}
+              </span>
             </div>
             
             <div className="message-book-description">
@@ -357,8 +373,17 @@ const Messages = ({ currentUser }) => {
             </div>
             
             <div className="message-book-publisher">
-              <h4>Publié par :</h4>
-              <p>{selectedConversation?.publisher_name || currentBook?.user?.username || 'Non spécifié'}</p>
+              {currentBook?.user?.avatar && (
+                <img 
+                  src={`http://localhost:5001${currentBook.user.avatar}`}
+                  alt={`Avatar de ${currentBook.user.username}`}
+                  className="message-book-publisher-avatar"
+                />
+              )}
+              <div className="message-book-publisher-info">
+                <h4>Publié par :</h4>
+                <p>{selectedConversation?.publisher_name || currentBook?.user?.username || 'Non spécifié'}</p>
+              </div>
             </div>
           </div>
         </div>

@@ -1,0 +1,36 @@
+/* frontend/src/pages/SearchResults.css */
+.search-results-container {
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 0 20px;
+}
+
+.search-results-container h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.book-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.no-results {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 18px;
+}
+
+.search-loading {
+  text-align: center;
+  padding: 40px;
+  color: #333;
+}
+
+.search-error {
+  text-align: center;
+  padding: 40px;
+  color: #d32f2f;
+}

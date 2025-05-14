@@ -366,3 +366,59 @@
     }
   }
   
+  /* Ajouter ces styles dans BookDetails.css et Messages.css */
+.availability-disponible {
+  color: #4CAF50;
+  background-color: #e8f5e9;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.availability-réservé {
+  color: #FF9800;
+  background-color: #fff3e0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.availability-echangé {
+  color: #F44336;
+  background-color: #ffebee;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.message-book-availability {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Pour Messages */
+.message-conv-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 10px;
+}
+
+/* Pour BookDetails */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+}

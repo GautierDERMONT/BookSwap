@@ -70,20 +70,19 @@ const BookDetails = ({ currentUser, onOpenLogin }) => {
     navigate(`/books/${id}/edit`);
   };
 
-  const handleDeleteClick = async () => {
-    if (window.confirm("Êtes-vous sûr de vouloir supprimer ce livre ?")) {
-      try {
-        await api.delete(`/books/${id}`, { 
-          data: { images: book.images },
-          withCredentials: true 
-        });
-        navigate('/', { state: { bookDeleted: true } });
-      } catch (error) {
-        console.error("Erreur lors de la suppression:", error);
-        alert(error.response?.data?.error || "Échec de la suppression");
-      }
+const handleDeleteClick = async () => {
+  if (window.confirm("Êtes-vous sûr de vouloir supprimer ce livre ?")) {
+    try {
+      await api.delete(`/books/${id}`, { 
+        withCredentials: true 
+      });
+      navigate('/', { state: { bookDeleted: true } });
+    } catch (error) {
+      console.error("Erreur lors de la suppression:", error);
+      alert(error.response?.data?.error || "Échec de la suppression");
     }
-  };
+  }
+};
 
   const handleMessageClick = async () => {
   if (!currentUser) {
@@ -180,6 +179,12 @@ const BookDetails = ({ currentUser, onOpenLogin }) => {
             <p><strong>Catégorie :</strong> {book.category || 'Non spécifié'}</p>
             <p><strong>État :</strong> {book.condition || 'Non spécifié'}</p>
             <p><strong>Localisation :</strong> {book.location || 'Non spécifié'}</p>
+            <p><strong>Disponibilité :</strong> 
+               <span className={`availability-${book.availability?.toLowerCase()}`}>
+                  {book.availability || 'Non spécifié'}
+              </span>
+            </p>
+
           </div>
           <div className="book-details-description">
             <h3>Description</h3>

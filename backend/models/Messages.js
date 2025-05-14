@@ -65,11 +65,14 @@ const Message = {
   // Récupérer les messages d'une conversation
   getConversationMessages: async (conversationId, userId) => {
     const [messages] = await pool.query(
-      `SELECT m.*, u.username, u.avatar 
-       FROM messages m
-       JOIN users u ON m.sender_id = u.id
-       WHERE m.conversation_id = ?
-       ORDER BY m.created_at ASC`,
+    `SELECT 
+        m.*, 
+        u.username as sender_name,
+        u.avatar as sender_avatar
+      FROM messages m
+      JOIN users u ON m.sender_id = u.id
+      WHERE m.conversation_id = ?
+      ORDER BY m.created_at ASC`,
       [conversationId]
     );
 

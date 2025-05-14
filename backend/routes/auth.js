@@ -7,17 +7,34 @@ const { pool } = require('../config/db');
 const router = express.Router();
 const multer = require('multer');
 
-const storage = multer.diskStorage({
+// Nouvelle configuration multer pour les avatars
+const avatarStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../uploads'));
+    const uploadDir = path.join(__dirname, '../uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `avatar_${req.userId}${ext}`);
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `temp_${Date.now()}${ext}`);
   }
 });
 
-const upload = multer({ storage });
+const upload = multer({ 
+  storage: avatarStorage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Seules les images sont autorisées!'), false);
+    }
+  },
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB
+  }
+});
 
 
 
@@ -167,20 +184,24 @@ router.put('/avatar', authenticate, upload.single('avatar'), async (req, res) =>
       return res.status(400).json({ error: "No avatar file uploaded" });
     }
 
-    const fileName = `avatar_${req.userId}${path.extname(req.file.originalname)}`;
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const fileName = `avatar_${req.userId}${ext}`;
     const filePath = path.join(__dirname, '../uploads', fileName);
 
     // Supprimer l'ancien avatar s'il existe
     const [users] = await pool.query('SELECT avatar FROM users WHERE id = ?', [req.userId]);
     if (users[0].avatar) {
       const oldAvatarPath = path.join(__dirname, '../uploads', path.basename(users[0].avatar));
-      if (fs.existsSync(oldAvatarPath)) {
+      if (fs.existsSync(oldAvatarPath) && oldAvatarPath !== req.file.path) {
         fs.unlinkSync(oldAvatarPath);
       }
     }
 
-    // Renommer le fichier téléchargé
-    fs.renameSync(req.file.path, filePath);
+    // Si le fichier est déjà au bon endroit (cas où l'extension est identique)
+    if (req.file.path !== filePath) {
+      // Déplacer le fichier seulement si nécessaire
+      fs.renameSync(req.file.path, filePath);
+    }
     
     // Mettre à jour la base de données
     await pool.query(
@@ -194,7 +215,16 @@ router.put('/avatar', authenticate, upload.single('avatar'), async (req, res) =>
     });
   } catch (err) {
     console.error('Avatar update error:', err);
-    res.status(500).json({ error: err.message });
+    
+    // Supprimer le fichier temporaire en cas d'erreur
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    
+    res.status(500).json({ 
+      error: "Failed to update avatar",
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 });
 

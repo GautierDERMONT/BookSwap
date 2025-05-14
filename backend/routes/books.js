@@ -45,8 +45,8 @@ router.post('/', authenticate, upload.array('images', 3), async (req, res) => {
     }
 
     // Vérifiez les champs requis
-    const { title, author, category, condition, location, description } = req.body;
-    if (!title || !author || !category || !condition || !location || !description) {
+    const { title, author, category, condition, location, description, availability } = req.body;
+    if (!title || !author || !category || !condition || !location || !description || !availability) {
       return res.status(400).json({ error: 'Tous les champs sont requis' });
     }
 
@@ -57,7 +57,8 @@ router.post('/', authenticate, upload.array('images', 3), async (req, res) => {
       category: category.trim(),
       condition: condition.trim(),
       location: location.trim(),
-      description: description.trim()
+      description: description.trim(),
+      availability: availability.trim()
     }, req.userId);
 
     // Ajoutez les images
@@ -79,6 +80,91 @@ router.post('/', authenticate, upload.array('images', 3), async (req, res) => {
       error: 'Erreur serveur',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
+  }
+});
+
+
+router.get('/search', async (req, res) => {
+  try {
+    const { q: query = '', location, condition, genre } = req.query;
+    
+    let sql = `
+      SELECT 
+        b.*, 
+        (SELECT GROUP_CONCAT(image_path ORDER BY id ASC) 
+         FROM book_images 
+         WHERE book_id = b.id) as images
+      FROM book b
+      WHERE 1=1
+    `;
+    
+    const params = [];
+    
+    // Ajouter le terme de recherche s'il existe
+    if (query) {
+      sql += ' AND (b.title LIKE ? OR b.author LIKE ?)';
+      params.push(`%${query}%`, `%${query}%`);
+    }
+    
+    // Ajouter les filtres
+    if (location) {
+      sql += ' AND b.location LIKE ?';
+      params.push(`%${location}%`);
+    }
+    
+    if (condition) {
+      sql += ' AND b.condition = ?';
+      params.push(condition);
+    }
+    
+    if (genre) {
+      sql += ' AND b.category = ?';
+      params.push(genre);
+    }
+    
+    sql += ' GROUP BY b.id';
+    
+    const [rows] = await pool.query(sql, params);
+
+    const books = rows.map(row => ({
+      ...row,
+      images: row.images ? row.images.split(',').filter(img => img !== '/uploads/') : []
+    }));
+
+    res.json({ books });
+  } catch (err) {
+    console.error('Search error:', err);
+    res.status(500).json({ error: 'Erreur lors de la recherche' });
+  }
+});
+
+// Dans books.js
+router.get('/suggestions', async (req, res) => {
+  try {
+    const query = req.query.q || '';
+    if (query.length < 3) {
+      return res.json({ suggestions: [] });
+    }
+
+    const searchQuery = `%${query}%`;
+    const [titles] = await pool.query(
+      'SELECT DISTINCT title FROM book WHERE title LIKE ? LIMIT 5',
+      [searchQuery]
+    );
+    const [authors] = await pool.query(
+      'SELECT DISTINCT author FROM book WHERE author LIKE ? LIMIT 5',
+      [searchQuery]
+    );
+
+    const suggestions = [
+      ...titles.map(t => t.title),
+      ...authors.map(a => a.author)
+    ].slice(0, 5);
+
+    res.json({ suggestions });
+  } catch (err) {
+    console.error('Suggestions error:', err);
+    res.status(500).json({ error: 'Erreur lors de la récupération des suggestions' });
   }
 });
 
@@ -105,12 +191,11 @@ router.delete('/:id', authenticate, async (req, res) => {
     const userId = req.userId;
 
     const [book] = await pool.query(`
-      SELECT b.users_id, GROUP_CONCAT(bi.image_path) as images 
+      SELECT b.*, u.username, u.avatar 
       FROM book b
-      LEFT JOIN book_images bi ON b.id = bi.book_id
+      JOIN users u ON b.users_id = u.id
       WHERE b.id = ?
-      GROUP BY b.id
-    `, [bookId]);
+    `, [bookId]);  // Changed from id to bookId
     
     if (!book || book.length === 0) {
       return res.status(404).json({ error: 'Livre non trouvé' });
@@ -120,18 +205,22 @@ router.delete('/:id', authenticate, async (req, res) => {
       return res.status(403).json({ error: 'Non autorisé - Vous n\'êtes pas le propriétaire de ce livre' });
     }
 
-    if (book[0].images) {
-      const images = book[0].images.split(',');
-      images.forEach(imagePath => {
-        if (imagePath) {
-          const filename = path.basename(imagePath);
-          const fullPath = path.join(__dirname, '../uploads', filename);
-          if (fs.existsSync(fullPath)) {
-            fs.unlinkSync(fullPath);
-          }
+    // Get images from book_images table
+    const [images] = await pool.query(
+      'SELECT image_path FROM book_images WHERE book_id = ?',
+      [bookId]
+    );
+
+    // Delete image files
+    images.forEach(image => {
+      if (image.image_path) {
+        const filename = path.basename(image.image_path);
+        const fullPath = path.join(__dirname, '../uploads', filename);
+        if (fs.existsSync(fullPath)) {
+          fs.unlinkSync(fullPath);
         }
-      });
-    }
+      }
+    });
 
     await pool.query('DELETE FROM book_images WHERE book_id = ?', [bookId]);
     await pool.query('DELETE FROM book WHERE id = ?', [bookId]);
@@ -189,7 +278,7 @@ router.get('/:id', async (req, res) => {
 
 router.put('/:id', authenticate, upload.array('images', 3), async (req, res) => {
   try {
-    const { title, author, category, condition, location, description } = req.body;
+    const { title, author, category, condition, location, description, availability } = req.body;
     const bookId = req.params.id;
     const userId = req.userId;
 
@@ -210,9 +299,10 @@ router.put('/:id', authenticate, upload.array('images', 3), async (req, res) => 
         category = ?, 
         \`condition\` = ?, 
         location = ?, 
-        description = ? 
-       WHERE id = ?`,
-      [title, author, category, condition, location, description, bookId]
+        description = ?,
+        availability = ?
+      WHERE id = ?`,
+      [title, author, category, condition, location, description, availability, bookId]
     );
 
     const existingImages = req.body.existingImages 

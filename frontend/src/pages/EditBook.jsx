@@ -21,7 +21,9 @@ const EditBook = () => {
     category: '',
     condition: '',
     location: '',
-    description: ''
+    description: '',
+    availability: ''
+
   });
 
   // Compteur de mots pour la description
@@ -42,7 +44,9 @@ const EditBook = () => {
           category: book.category,
           condition: book.condition,
           location: book.location,
-          description: book.description
+          description: book.description,
+          availability: book.availability 
+
         });
 
         if (book.images && book.images.length > 0) {
@@ -151,6 +155,8 @@ const EditBook = () => {
       formDataToSend.append('condition', formData.condition.trim());
       formDataToSend.append('location', formData.location.trim());
       formDataToSend.append('description', formData.description.trim());
+      formDataToSend.append('availability', formData.availability);
+
 
       // Ajouter les nouvelles images
       images.forEach((image) => {
@@ -316,6 +322,22 @@ const EditBook = () => {
             required
           />
         </div>
+
+                <br />
+             <div className="form-group">
+              <label>Disponibilité *</label>
+              <select
+                name="availability"
+                value={formData.availability}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Sélectionnez...</option>
+                <option value="Disponible">Disponible</option>
+                <option value="Réservé">Réservé</option>
+                <option value="Echangé">Echangé</option>
+              </select>
+          </div>
         <br />
         <div className="form-group">
           <label>Description *</label>
