@@ -295,26 +295,33 @@ const Messages = ({ currentUser }) => {
           <>
             <div className="message-messages">
               <div style={{ flex: 1, minHeight: 0 }} />
-                {messages.map((msg) => (
-                  <div key={msg.id} className={`message-bubble ${msg.sender_id === currentUser.id ? 'sent' : 'received'}`}>
-                    {msg.sender_id !== currentUser.id && msg.sender_avatar && (
-                      <img 
-                        src={`http://localhost:5001${msg.sender_avatar}`}
-                        alt={`Avatar de ${msg.sender_name}`}
-                        className="message-sender-avatar"
-                      />
-                    )}
-                    <div className="message-content">
-                      <p>{msg.content}</p>
-                      <div className="message-meta">
-                        <span>{formatDate(msg.created_at)}</span>
-                        {msg.sender_id === currentUser.id && (
-                          <span>{msg.is_read ? <FiCheck /> : <FiClock />}</span>
-                        )}
+                {messages.map((msg, index) => {
+                  const showAvatar = msg.sender_id !== currentUser.id && 
+                                    (index === 0 || messages[index - 1].sender_id !== msg.sender_id);
+                  
+                  return (
+                    <div key={msg.id} className={`message-wrapper ${msg.sender_id === currentUser.id ? 'sent' : 'received'}`}>
+                      {showAvatar && msg.sender_avatar && (
+                        <img 
+                          src={`http://localhost:5001${msg.sender_avatar}`}
+                          alt={`Avatar de ${msg.sender_name}`}
+                          className="message-sender-avatar"
+                        />
+                      )}
+                      <div className={`message-bubble ${msg.sender_id === currentUser.id ? 'sent' : 'received'}`}>
+                        <div className="message-content">
+                          <p>{msg.content}</p>
+                          <div className="message-meta">
+                            <span>{formatDate(msg.created_at)}</span>
+                            {msg.sender_id === currentUser.id && (
+                              <span>{msg.is_read ? <FiCheck /> : <FiClock />}</span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               <div ref={messagesEndRef} />
             </div>
             
@@ -372,19 +379,22 @@ const Messages = ({ currentUser }) => {
               <p>{currentBook.description || 'Aucune description disponible.'}</p>
             </div>
             
-            <div className="message-book-publisher">
-              {currentBook?.user?.avatar && (
-                <img 
-                  src={`http://localhost:5001${currentBook.user.avatar}`}
-                  alt={`Avatar de ${currentBook.user.username}`}
-                  className="message-book-publisher-avatar"
-                />
-              )}
-              <div className="message-book-publisher-info">
+              <div className="message-book-publisher">
                 <h4>Publié par :</h4>
-                <p>{selectedConversation?.publisher_name || currentBook?.user?.username || 'Non spécifié'}</p>
+                <div className="publisher-content">
+                  <img 
+                    src={currentBook?.avatar 
+                      ? `http://localhost:5001${currentBook.avatar}`
+                      : 'http://localhost:5001/default-avatar.png'
+                    }
+                    alt={`Avatar de ${currentBook?.user?.username || 'utilisateur'}`}
+                    className="message-book-publisher-avatar"
+                  />
+                  <p className="publisher-name">
+                    {selectedConversation?.publisher_name || currentBook?.user?.username || 'Non spécifié'}
+                  </p>
+                </div>
               </div>
-            </div>
           </div>
         </div>
       )}

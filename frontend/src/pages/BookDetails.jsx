@@ -24,6 +24,7 @@ const BookDetails = ({ currentUser, onOpenLogin }) => {
       setLoading(true);
       try {
         const { data } = await axios.get(`${API_URL}/api/books/${id}`);
+        console.log("Données complètes du livre:", data); // <-- Ajoute cette ligne
         const images = data.book.images?.length
           ? data.book.images.map(getImageUrl)
           : [`${API_URL}/placeholder.jpg`];
@@ -174,18 +175,31 @@ const handleDeleteClick = async () => {
         >
           <h1>{book.title}</h1>
           <h2>{book.author || 'Auteur inconnu'}</h2>
-          <div className="book-details-meta">
-            <p><strong>Proposé par :</strong> {book.user?.username || 'Anonyme'}</p>
-            <p><strong>Catégorie :</strong> {book.category || 'Non spécifié'}</p>
-            <p><strong>État :</strong> {book.condition || 'Non spécifié'}</p>
-            <p><strong>Localisation :</strong> {book.location || 'Non spécifié'}</p>
-            <p><strong>Disponibilité :</strong> 
-               <span className={`availability-${book.availability?.toLowerCase()}`}>
-                  {book.availability || 'Non spécifié'}
-              </span>
-            </p>
-
-          </div>
+            <div className="book-details-meta">
+              <p className="publisher-info">
+                <strong>Proposé par :</strong>
+                {book.avatar ? (
+                  <img 
+                    src={`${API_URL}${book.avatar}`}
+                    alt={`Avatar de ${book.username}`}
+                    className="publisher-avatar"
+                    onError={(e) => {
+                      e.target.src = `${API_URL}/default-avatar.png`;
+                      console.error("Erreur de chargement de l'avatar:", book.avatar);
+                    }}
+                  />
+                ) : null}
+                <span>{book.username || 'Anonyme'}</span>
+              </p>
+              <p><strong>Catégorie :</strong> {book.category || 'Non spécifié'}</p>
+              <p><strong>État :</strong> {book.condition || 'Non spécifié'}</p>
+              <p><strong>Localisation :</strong> {book.location || 'Non spécifié'}</p>
+              <p><strong>Disponibilité :</strong> 
+                <span className={`availability-${book.availability?.toLowerCase()}`}>
+                    {book.availability || 'Non spécifié'}
+                </span>
+              </p>
+            </div>
           <div className="book-details-description">
             <h3>Description</h3>
             <p>{book.description || 'Aucune description disponible.'}</p>

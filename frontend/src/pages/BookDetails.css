@@ -341,6 +341,26 @@
   .close-button:hover {
     background: rgba(255,255,255,0.4);
   }
+
+    .book-publisher {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+    .publisher-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .publisher-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
   
   /* ----- Responsive ----- */
   @media (max-width: 1000px) {
@@ -422,3 +442,4 @@
   border-radius: 50%;
   object-fit: cover;
 }
+

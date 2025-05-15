@@ -10,6 +10,10 @@ module.exports = async (req, res, next) => {
       return res.status(401).json({ error: "Authentication required" });
     }
 
+    if (req.path.startsWith('/uploads/') || req.path.startsWith('/default-avatar.png')) {
+      return next();
+    }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_secret_key');
     
     if (!decoded.userId) {

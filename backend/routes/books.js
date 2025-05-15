@@ -242,6 +242,7 @@ router.get('/:id', async (req, res) => {
         b.*, 
         u.id as user_id, 
         u.username,
+        u.avatar,  
         u.email,
         (SELECT GROUP_CONCAT(image_path ORDER BY id ASC) FROM book_images WHERE book_id = b.id) as images
       FROM book b
@@ -338,6 +339,43 @@ router.put('/:id', authenticate, upload.array('images', 3), async (req, res) => 
   } catch (err) {
     console.error('Erreur lors de la modification:', err);
     res.status(500).json({ error: 'Erreur lors de la modification du livre' });
+  }
+});
+
+
+// Ajoutez cette route avant module.exports = router;
+router.get('/', async (req, res) => {
+  try {
+    let query = `
+      SELECT 
+        b.*, 
+        u.username,
+        u.avatar,
+        (SELECT GROUP_CONCAT(image_path ORDER BY id ASC) FROM book_images WHERE book_id = b.id) as images
+      FROM book b
+      LEFT JOIN users u ON b.users_id = u.id
+    `;
+
+    const params = [];
+
+    if (req.query.userId) {
+      query += ' WHERE b.users_id = ?';
+      params.push(req.query.userId);
+    }
+
+    query += ' GROUP BY b.id';
+
+    const [rows] = await pool.query(query, params);
+
+    const books = rows.map(row => ({
+      ...row,
+      images: row.images ? row.images.split(',').map(img => `/uploads/${path.basename(img)}`) : []
+    }));
+
+    res.json({ books });
+  } catch (err) {
+    console.error('Error fetching books:', err);
+    res.status(500).json({ error: 'Error fetching books' });
   }
 });
 

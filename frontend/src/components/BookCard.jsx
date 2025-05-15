@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './BookCard.css';
 
-export default function BookCard({ book, isAuthenticated, currentUser, onRequireLogin }) {
+export default function BookCard({ book, isAuthenticated, currentUser, onRequireLogin, hideOwnerBadge }) {
   const [isFavorite, setIsFavorite] = useState(false);
   const userId = currentUser?.userId || currentUser?.id;
   const storageKey = userId ? `favorite-${userId}-${book.id}` : null;
@@ -49,7 +49,7 @@ export default function BookCard({ book, isAuthenticated, currentUser, onRequire
 
   return (
     <div className="book-card" onClick={() => navigate(`/books/${book.id}`)}>
-          {isOwner && (
+      {!hideOwnerBadge && isOwner && (
             <div className="owner-badge">Mon livre</div>
           )}
           <div className="book-image-container">

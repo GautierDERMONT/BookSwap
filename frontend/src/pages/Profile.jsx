@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './Profile.css';
+import BookCard from '../components/BookCard';
 
 const Profile = ({ currentUser }) => {
   const [formData, setFormData] = useState({
@@ -14,6 +15,9 @@ const Profile = ({ currentUser }) => {
   const [tempAvatar, setTempAvatar] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
+  const [userBooks, setUserBooks] = useState([]);
+  const [loadingBooks, setLoadingBooks] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -36,8 +40,25 @@ const Profile = ({ currentUser }) => {
       }
     };
 
+    const fetchUserBooks = async () => {
+      try {
+        const response = await axios.get('http://localhost:5001/api/books', {
+          params: { userId: currentUser.id },
+          withCredentials: true
+        });
+        setUserBooks(response.data.books);
+      } catch (error) {
+        console.error('Error fetching user books:', error);
+      } finally {
+        setLoadingBooks(false);
+      }
+    };
+
     fetchProfile();
-  }, []);
+    if (currentUser?.id) {
+      fetchUserBooks();
+    }
+  }, [currentUser]);
 
   const getDefaultAvatar = (username) => {
     if (!username) return '';
@@ -107,61 +128,58 @@ const Profile = ({ currentUser }) => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  try {
-    setIsLoading(true);
-    setMessage({ text: '', type: '' });
+    e.preventDefault();
+    try {
+      setIsLoading(true);
+      setMessage({ text: '', type: '' });
 
-    // Gestion de l'avatar
-    if (formData.deleteAvatar) {
-      await axios.delete('http://localhost:5001/api/auth/avatar', {
-        withCredentials: true
-      });
-    } else if (formData.avatar) {
-      const avatarForm = new FormData();
-      avatarForm.append('avatar', formData.avatar);
-      
+      if (formData.deleteAvatar) {
+        await axios.delete('http://localhost:5001/api/auth/avatar', {
+          withCredentials: true
+        });
+      } else if (formData.avatar) {
+        const avatarForm = new FormData();
+        avatarForm.append('avatar', formData.avatar);
+        
+        await axios.put(
+          'http://localhost:5001/api/auth/avatar',
+          avatarForm,
+          {
+            withCredentials: true,
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          }
+        );
+      }
+
       await axios.put(
-        'http://localhost:5001/api/auth/avatar',
-        avatarForm,
+        'http://localhost:5001/api/auth/profile',
         {
+          username: formData.username,
+          location: formData.location,
+          bio: formData.bio
+        },
+        { 
           withCredentials: true,
           headers: {
-            'Content-Type': 'multipart/form-data'
+            'Content-Type': 'application/json'
           }
         }
       );
+
+      setMessage({ text: 'Profil mis à jour avec succès', type: 'success' });
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      setMessage({ 
+        text: error.response?.data?.error || 'Erreur lors de la mise à jour du profil', 
+        type: 'error' 
+      });
+    } finally {
+      setIsLoading(false);
     }
-
-    // Mise à jour des autres informations
-    await axios.put(
-      'http://localhost:5001/api/auth/profile',
-      {
-        username: formData.username,
-        location: formData.location,
-        bio: formData.bio
-      },
-      { 
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-    setMessage({ text: 'Profil mis à jour avec succès', type: 'success' });
-    // Rafraîchir les données après un court délai
-    setTimeout(() => window.location.reload(), 1500);
-  } catch (error) {
-    console.error('Error updating profile:', error);
-    setMessage({ 
-      text: error.response?.data?.error || 'Erreur lors de la mise à jour du profil', 
-      type: 'error' 
-    });
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   return (
     <div className="profile-page">
@@ -259,6 +277,53 @@ const Profile = ({ currentUser }) => {
           </button>
         </div>
       </form>
+
+      <div className="user-books-section">
+        <h2>Vos livres ({userBooks.length})</h2>
+        
+        {loadingBooks ? (
+          <p>Chargement de vos livres...</p>
+        ) : userBooks.length > 0 ? (
+            <div className="user-books-grid">
+              {userBooks.map(book => (
+                
+                <div key={book.id} className="user-book-card-wrapper">
+                  
+                  <BookCard 
+                  
+                    book={book} 
+                    isAuthenticated={true} 
+                    currentUser={currentUser} 
+                    onRequireLogin={() => {}} 
+                    hideOwnerBadge={true}  
+                  />
+                  <br />
+                  <div className="book-hover-actions">
+                    <button 
+                      className="edit-book-button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/books/${book.id}/edit`);
+                      }}
+                    >
+                      ✏️ Modifier
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+        ) : (
+          <div className="no-books-message">
+            <p>Vous n'avez pas encore ajouté de livres.</p>
+            <button 
+              className="add-book-button"
+              onClick={() => navigate('/add-book')}
+            >
+              Ajouter un livre
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
