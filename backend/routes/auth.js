@@ -38,6 +38,7 @@ const upload = multer({
 
 
 
+
 // Middleware d'authentification
 const authenticate = async (req, res, next) => {
   const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
@@ -250,5 +251,7 @@ router.delete('/avatar', authenticate, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+
 
 module.exports = router;

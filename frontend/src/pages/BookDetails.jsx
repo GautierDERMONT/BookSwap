@@ -9,22 +9,34 @@ const API_URL = 'http://localhost:5001';
 const getImageUrl = (img) =>
   img?.startsWith('/uploads') ? `${API_URL}${img}` : `${API_URL}/uploads/${img || 'placeholder.jpg'}`;
 
-const BookDetails = ({ currentUser, onOpenLogin }) => {
+const BookDetails = ({ currentUser, executeAfterAuth }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
   const [zoomedImageIndex, setZoomedImageIndex] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [showFavoriteModal, setShowFavoriteModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
   const gridRef = useRef(null);
   const [gridHeight, setGridHeight] = useState(null);
+  
+  const userId = currentUser?.userId || currentUser?.id;
+  const storageKey = userId && book?.id ? `favorite-${userId}-${book.id}` : null;
+  const isAuthenticated = !!currentUser;
+
+  useEffect(() => {
+    if (storageKey) {
+      const saved = localStorage.getItem(storageKey);
+      setIsFavorite(saved === 'true');
+    }
+  }, [storageKey]);
 
   useEffect(() => {
     const fetchBook = async () => {
       setLoading(true);
       try {
         const { data } = await axios.get(`${API_URL}/api/books/${id}`);
-        console.log("Données complètes du livre:", data); // <-- Ajoute cette ligne
         const images = data.book.images?.length
           ? data.book.images.map(getImageUrl)
           : [`${API_URL}/placeholder.jpg`];
@@ -44,7 +56,6 @@ const BookDetails = ({ currentUser, onOpenLogin }) => {
     }
   }, [book, loading]);
 
-  const toggleFavorite = () => setIsFavorite((fav) => !fav);
   const openZoom = (idx) => setZoomedImageIndex(idx);
   const closeZoom = () => setZoomedImageIndex(null);
 
@@ -55,6 +66,41 @@ const BookDetails = ({ currentUser, onOpenLogin }) => {
         ? (prev + 1) % book.images.length
         : (prev - 1 + book.images.length) % book.images.length
     );
+  };
+
+  const handleFavoriteClick = async (e) => {
+    e.stopPropagation();
+    
+    executeAfterAuth(async () => {
+      const newFavorite = !isFavorite;
+      setIsFavorite(newFavorite);
+
+      if (storageKey) {
+        localStorage.setItem(storageKey, newFavorite.toString());
+      }
+
+      setModalMessage(newFavorite ? "Ajouté aux favoris !" : "Supprimé des favoris !");
+      setShowFavoriteModal(true);
+      setTimeout(() => setShowFavoriteModal(false), 1500);
+
+      try {
+        const response = await fetch(`${API_URL}/api/favorites`, {
+          method: newFavorite ? 'POST' : 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId, bookId: book.id }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Erreur lors de la mise à jour des favoris');
+        }
+      } catch (error) {
+        console.error(error);
+        setIsFavorite(!newFavorite);
+        setShowFavoriteModal(false);
+      }
+    });
   };
 
   const handleModalClick = (e) => {
@@ -71,62 +117,58 @@ const BookDetails = ({ currentUser, onOpenLogin }) => {
     navigate(`/books/${id}/edit`);
   };
 
-const handleDeleteClick = async () => {
-  if (window.confirm("Êtes-vous sûr de vouloir supprimer ce livre ?")) {
-    try {
-      await api.delete(`/books/${id}`, { 
-        withCredentials: true 
-      });
-      navigate('/', { state: { bookDeleted: true } });
-    } catch (error) {
-      console.error("Erreur lors de la suppression:", error);
-      alert(error.response?.data?.error || "Échec de la suppression");
+  const handleDeleteClick = async () => {
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer ce livre ?")) {
+      try {
+        await api.delete(`/books/${id}`, { 
+          withCredentials: true 
+        });
+        navigate('/', { state: { bookDeleted: true } });
+      } catch (error) {
+        console.error("Erreur lors de la suppression:", error);
+        alert(error.response?.data?.error || "Échec de la suppression");
+      }
     }
-  }
-};
+  };
 
   const handleMessageClick = async () => {
-  if (!currentUser) {
-    onOpenLogin();
-    return;
-  }
+    executeAfterAuth(async () => {
+      try {
+        const response = await api.post('/conversations', {
+          bookId: book.id,
+          recipientId: book.user.id
+        }, { withCredentials: true });
 
-  try {
-    const response = await api.post('/conversations', {
-      bookId: book.id,
-      recipientId: book.user.id
-    }, { withCredentials: true });
-
-    navigate(`/messages/${response.data.conversationId}`, {
-      state: {
-        bookId: book.id,
-        recipientId: book.user.id,
-        bookInfo: {
-          id: book.id,
-          title: book.title,
-          bookLocation: book.location,
-          image: book.images?.[0]
-        },
-        interlocutor: {
-          id: book.user.id,
-          username: book.user.username,
-          avatar: book.user.avatar
-        }
+        navigate(`/messages/${response.data.conversationId}`, {
+          state: {
+            bookId: book.id,
+            recipientId: book.user.id,
+            bookInfo: {
+              id: book.id,
+              title: book.title,
+              bookLocation: book.location,
+              image: book.images?.[0]
+            },
+            interlocutor: {
+              id: book.user.id,
+              username: book.user.username,
+              avatar: book.user.avatar
+            }
+          }
+        });
+      } catch (error) {
+        console.error("Erreur lors de la création de la conversation:", error);
+        alert(error.response?.data?.error || "Impossible de démarrer la conversation");
       }
     });
-  } catch (error) {
-    console.error("Erreur lors de la création de la conversation:", error);
-    alert(error.response?.data?.error || "Impossible de démarrer la conversation");
-  }
-};
-  
+  };
 
   if (loading) return <div className="book-details-loading">Chargement...</div>;
   if (!book) return <div className="book-details-error">Livre non trouvé</div>;
 
   const images = book.images;
   const isOwner = currentUser && book && (currentUser.userId === book.users_id || currentUser.id === book.users_id);
-
+  
   return (
     <div className="book-details-wrapper">
       <div className="book-details-page">
@@ -162,7 +204,7 @@ const handleDeleteClick = async () => {
           </div>
           <button
             className="favorite-button"
-            onClick={toggleFavorite}
+            onClick={handleFavoriteClick}
             aria-label="Ajouter aux favoris"
           >
             {isFavorite ? '❤️' : '🤍'}

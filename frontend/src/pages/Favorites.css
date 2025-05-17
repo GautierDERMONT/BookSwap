@@ -1,0 +1,41 @@
+/* Favorites.css */
+
+.favorites-page {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.favorites-page h2 {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #34495e;
+  text-align: center;
+  margin-bottom: 40px;
+  font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  /* Suppression du cadre et fond */
+  /* border-bottom removed */
+  /* box-shadow removed */
+  /* background removed */
+  border-bottom: none;
+  box-shadow: none;
+  background: none;
+  padding-bottom: 0;
+}
+
+.favorites-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px 60px; /* gros espace entre cartes vertical & horizontal */
+  justify-content: flex-start; /* aligné à gauche */
+}
+
+.favorites-list p {
+  font-size: 1.2rem;
+  color: #777;
+  width: 100%;
+  text-align: center;
+  margin-top: 40px;
+}

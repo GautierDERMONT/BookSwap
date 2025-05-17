@@ -1,13 +1,13 @@
-import React, { useState } from 'react'; 
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Plus, X, Upload } from 'react-feather';
-import { useNavigate } from 'react-router-dom'; // Importer useNavigate
-import './AddBook.css'; // On réutilise le même CSS
+import './AddBook.css';
 
 const API_URL = 'http://localhost:5001';
 
 const AddBook = () => {
-  const navigate = useNavigate(); // Initialiser useNavigate
+  const navigate = useNavigate();
   const [images, setImages] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -20,10 +20,30 @@ const AddBook = () => {
     condition: '',
     location: '',
     description: '',
-    availability:''
+    availability: 'Disponible'
   });
 
-  // Compteur de mots pour la description
+  // Récupérer la localisation du profil
+  useEffect(() => {
+    const fetchUserLocation = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/api/auth/profile`, {
+          withCredentials: true
+        });
+        if (response.data.location) {
+          setFormData(prev => ({
+            ...prev,
+            location: response.data.location
+          }));
+        }
+      } catch (err) {
+        console.error("Erreur lors de la récupération du profil:", err);
+      }
+    };
+
+    fetchUserLocation();
+  }, []);
+
   const countWords = (text) => {
     return text.trim().split(/\s+/).filter(Boolean).length;
   };
@@ -63,7 +83,7 @@ const AddBook = () => {
     if (files.length !== validFiles.length) {
       setError('Veuillez choisir uniquement des images.');
     } else {
-      setError(null); // Réinitialiser l'erreur si tous les fichiers sont valides
+      setError(null);
     }
 
     if (validFiles.length) {
@@ -77,68 +97,66 @@ const AddBook = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+  
+    if (name === 'description' && countWords(value) > 50) {
+      return;
+    }
+  
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setIsSubmitting(true);
-  setError(null);
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
+  
+    // Validation des champs obligatoires
+    const requiredFields = ['title', 'author', 'category', 'condition', 'location', 'description'];
+    const missingFields = requiredFields.filter(field => !formData[field] || formData[field].trim().length === 0);
+  
+    if (missingFields.length > 0) {
+      setError('Veuillez remplir tous les champs obligatoires');
+      setIsSubmitting(false);
+      return;
+    }
+  
+    // Validation des images
+    if (images.length === 0) {
+      setError('Veuillez ajouter au moins une image');
+      setIsSubmitting(false);
+      return;
+    }
+  
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('title', formData.title.trim());
+      formDataToSend.append('author', formData.author.trim());
+      formDataToSend.append('category', formData.category.trim());
+      formDataToSend.append('condition', formData.condition.trim());
+      formDataToSend.append('location', formData.location.trim());
+      formDataToSend.append('description', formData.description.trim());
+      formDataToSend.append('availability', formData.availability);
 
-  // Validation des champs obligatoires
-  const requiredFields = ['title', 'author', 'category', 'condition', 'location', 'description'];
-  const missingFields = requiredFields.filter(field => !formData[field] || formData[field].trim().length === 0);
+      // Ajouter les images
+      images.forEach((image) => {
+        formDataToSend.append('images', image);
+      });
 
-  if (missingFields.length > 0) {
-    setError('Veuillez remplir tous les champs obligatoires');
-    setIsSubmitting(false);
-    return;
-  }
+      await axios.post(`${API_URL}/api/books`, formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        },
+        withCredentials: true
+      });
 
-  // Validation des images
-  if (images.length === 0) {
-    setError('Veuillez ajouter au moins une image');
-    setIsSubmitting(false);
-    return;
-  }
-
-  try {
-    const formDataToSend = new FormData();
-    
-    // Ajouter les champs texte
-    formDataToSend.append('title', formData.title.trim());
-    formDataToSend.append('author', formData.author.trim());
-    formDataToSend.append('category', formData.category.trim());
-    formDataToSend.append('condition', formData.condition.trim());
-    formDataToSend.append('location', formData.location.trim());
-    formDataToSend.append('description', formData.description.trim());
-    formDataToSend.append('availability', formData.availability);
-
-
-    // Ajouter les images
-    images.forEach((image) => {
-      formDataToSend.append('images', image);
-    });
-
-    // Effectuer la requête POST
-    const response = await axios.post(`${API_URL}/api/books`, formDataToSend, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      },
-      withCredentials: true
-    });
-
-    // Redirection après succès
-    navigate('/', { state: { bookAdded: true } });
-    alert("Livre ajouté avec succès !");
-    
-  } catch (err) {
-    console.error('Erreur lors de l\'ajout du livre:', err);
-    setError(err.response?.data?.error || 'Erreur lors de l\'ajout du livre');
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+      navigate('/profile');
+    } catch (err) {
+      console.error('Erreur lors de l\'ajout du livre:', err);
+      setError(err.response?.data?.error || 'Erreur lors de l\'ajout du livre');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="add-book-container">
@@ -157,7 +175,7 @@ const AddBook = () => {
             <div className="upload-area">
               <Upload size={40} className="upload-icon" />
               <p>Glissez-déposez vos images ici ou cliquez pour sélectionner</p>
-              <p>(3 maximum au total)</p>
+              <p>(3 maximum)</p>
               <input
                 id="file-input"
                 type="file"
@@ -173,7 +191,7 @@ const AddBook = () => {
         {images.length > 0 && (
           <div className="preview-container">
             {images.map((image, index) => (
-              <div key={`new-${index}`} className="preview-item">
+              <div key={index} className="preview-item">
                 <img
                   src={URL.createObjectURL(image)}
                   alt={`Preview ${index}`}
@@ -189,7 +207,7 @@ const AddBook = () => {
               </div>
             ))}
 
-            {(images.length) < 3 && (
+            {images.length < 3 && (
               <label htmlFor="file-input" className="add-more">
                 <Plus size={24} />
                 <span>Ajouter</span>
@@ -260,23 +278,21 @@ const AddBook = () => {
             required
           />
         </div>
-              <br />
-          <div className="form-group">
-              <label>Disponibilité *</label>
-              <select
-                name="availability"
-                value={formData.availability}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Sélectionnez...</option>
-                <option value="Disponible">Disponible</option>
-                <option value="Réservé">Réservé</option>
-              </select>
-          </div>
 
+        <div className="form-group">
+          <label>Disponibilité *</label>
+          <select
+            name="availability"
+            value={formData.availability}
+            onChange={handleChange}
+            required
+          >
+            <option value="Disponible">Disponible</option>
+            <option value="Réservé">Réservé</option>
+            <option value="Echangé">Echangé</option>
+          </select>
+        </div>
 
-        <br />
         <div className="form-group">
           <label>Description *</label>
           <textarea
@@ -294,7 +310,7 @@ const AddBook = () => {
           className="submit-button"
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'Enregistrement en cours...' : 'Ajouter le livre'}
+          {isSubmitting ? 'Publication en cours...' : 'Publier le livre'}
         </button>
       </form>
     </div>

@@ -41,18 +41,17 @@ const Profile = ({ currentUser }) => {
     };
 
     const fetchUserBooks = async () => {
-      try {
-        const response = await axios.get('http://localhost:5001/api/books', {
-          params: { userId: currentUser.id },
-          withCredentials: true
-        });
-        setUserBooks(response.data.books);
-      } catch (error) {
-        console.error('Error fetching user books:', error);
-      } finally {
-        setLoadingBooks(false);
-      }
-    };
+        try {
+          const response = await axios.get(`http://localhost:5001/api/books/user/${currentUser.id}`, {
+            withCredentials: true
+          });
+          setUserBooks(response.data.books);
+        } catch (error) {
+          console.error('Error fetching user books:', error);
+        } finally {
+          setLoadingBooks(false);
+        }
+      };
 
     fetchProfile();
     if (currentUser?.id) {

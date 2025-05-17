@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react'; 
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Plus, X, Upload } from 'react-feather';
-import './AddBook.css'; // On réutilise le même CSS
+import './AddBook.css';
 
 const API_URL = 'http://localhost:5001';
 
@@ -14,6 +14,7 @@ const EditBook = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -22,16 +23,13 @@ const EditBook = () => {
     condition: '',
     location: '',
     description: '',
-    availability: ''
-
+    availability: 'Disponible'
   });
 
-  // Compteur de mots pour la description
   const countWords = (text) => {
     return text.trim().split(/\s+/).filter(Boolean).length;
   };
 
-  // Charger les données du livre existant
   useEffect(() => {
     const fetchBookData = async () => {
       try {
@@ -45,8 +43,7 @@ const EditBook = () => {
           condition: book.condition,
           location: book.location,
           description: book.description,
-          availability: book.availability 
-
+          availability: book.availability
         });
 
         if (book.images && book.images.length > 0) {
@@ -64,7 +61,6 @@ const EditBook = () => {
     fetchBookData();
   }, [id]);
 
-  // Gestion des images (identique à AddBook)
   const handleDragEnter = (e) => {
     e.preventDefault();
     setIsDragging(true);
@@ -99,7 +95,7 @@ const EditBook = () => {
     if (files.length !== validFiles.length) {
       setError('Veuillez choisir uniquement des images.');
     } else {
-      setError(null); // Réinitialiser l'erreur si tous les fichiers sont valides
+      setError(null);
     }
 
     if (validFiles.length) {
@@ -129,9 +125,9 @@ const EditBook = () => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
+    setSuccess(null);
   
-    // Validation des champs obligatoires
-    const requiredFields = ['title', 'author', 'category', 'condition', 'location', 'description'];
+    const requiredFields = ['title', 'author', 'category', 'condition', 'location', 'description', 'availability'];
     const missingFields = requiredFields.filter(field => !formData[field] || formData[field].trim().length === 0);
   
     if (missingFields.length > 0) {
@@ -140,7 +136,6 @@ const EditBook = () => {
       return;
     }
   
-    // Validation des images
     if (images.length === 0 && existingImages.length === 0) {
       setError('Veuillez ajouter au moins une image');
       setIsSubmitting(false);
@@ -157,28 +152,28 @@ const EditBook = () => {
       formDataToSend.append('description', formData.description.trim());
       formDataToSend.append('availability', formData.availability);
 
-
-      // Ajouter les nouvelles images
       images.forEach((image) => {
         formDataToSend.append('images', image);
       });
 
-      // Ajouter les images existantes à conserver
       existingImages.forEach((image) => {
         formDataToSend.append('existingImages', image.path);
       });
 
-      await axios.put(`${API_URL}/api/books/${id}`, formDataToSend, {
+      const response = await axios.put(`${API_URL}/api/books/${id}`, formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data'
         },
         withCredentials: true
       });
 
-      navigate(`/books/${id}`, { state: { bookUpdated: true } });
+      setSuccess('Livre mis à jour avec succès');
+      setTimeout(() => {
+        navigate(`/books/${id}`);
+      }, 1500);
       
     } catch (err) {
-      console.error('Erreur lors de la modification du livre:', err);
+      console.error('Erreur lors de la modification:', err);
       setError(err.response?.data?.error || 'Erreur lors de la modification du livre');
     } finally {
       setIsSubmitting(false);
@@ -189,6 +184,7 @@ const EditBook = () => {
     <div className="add-book-container">
       <h2>Modifier le livre</h2>
       {error && <div className="alert error">{error}</div>}
+      {success && <div className="alert success">{success}</div>}
       
       <form onSubmit={handleSubmit}>
         <div
@@ -323,22 +319,20 @@ const EditBook = () => {
           />
         </div>
 
-                <br />
-             <div className="form-group">
-              <label>Disponibilité *</label>
-              <select
-                name="availability"
-                value={formData.availability}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Sélectionnez...</option>
-                <option value="Disponible">Disponible</option>
-                <option value="Réservé">Réservé</option>
-                <option value="Echangé">Echangé</option>
-              </select>
-          </div>
-        <br />
+        <div className="form-group">
+          <label>Disponibilité *</label>
+          <select
+            name="availability"
+            value={formData.availability}
+            onChange={handleChange}
+            required
+          >
+            <option value="Disponible">Disponible</option>
+            <option value="Réservé">Réservé</option>
+            <option value="Echangé">Echangé</option>
+          </select>
+        </div>
+
         <div className="form-group">
           <label>Description *</label>
           <textarea

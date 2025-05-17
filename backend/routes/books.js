@@ -343,7 +343,6 @@ router.put('/:id', authenticate, upload.array('images', 3), async (req, res) => 
 });
 
 
-// Ajoutez cette route avant module.exports = router;
 router.get('/', async (req, res) => {
   try {
     let query = `
@@ -354,28 +353,51 @@ router.get('/', async (req, res) => {
         (SELECT GROUP_CONCAT(image_path ORDER BY id ASC) FROM book_images WHERE book_id = b.id) as images
       FROM book b
       LEFT JOIN users u ON b.users_id = u.id
+      ${req.query.userId ? 'WHERE b.users_id = ?' : ''}
+      GROUP BY b.id
     `;
 
-    const params = [];
-
-    if (req.query.userId) {
-      query += ' WHERE b.users_id = ?';
-      params.push(req.query.userId);
-    }
-
-    query += ' GROUP BY b.id';
+    const params = req.query.userId ? [req.query.userId] : [];
 
     const [rows] = await pool.query(query, params);
 
     const books = rows.map(row => ({
       ...row,
-      images: row.images ? row.images.split(',').map(img => `/uploads/${path.basename(img)}`) : []
+      images: row.images ? row.images.split(',').map(img => `/uploads/${path.basename(img)}`).filter(img => img !== '/uploads/') : []
     }));
 
     res.json({ books });
   } catch (err) {
     console.error('Error fetching books:', err);
     res.status(500).json({ error: 'Error fetching books' });
+  }
+});
+
+router.get('/user/:userId', async (req, res) => {
+  try {
+    const query = `
+      SELECT 
+        b.*, 
+        u.username,
+        u.avatar,
+        (SELECT GROUP_CONCAT(image_path ORDER BY id ASC) FROM book_images WHERE book_id = b.id) as images
+      FROM book b
+      LEFT JOIN users u ON b.users_id = u.id
+      WHERE b.users_id = ?
+      GROUP BY b.id
+    `;
+
+    const [rows] = await pool.query(query, [req.params.userId]);
+
+    const books = rows.map(row => ({
+      ...row,
+      images: row.images ? row.images.split(',').map(img => `/uploads/${path.basename(img)}`).filter(img => img !== '/uploads/') : []
+    }));
+
+    res.json({ books });
+  } catch (err) {
+    console.error('Error fetching user books:', err);
+    res.status(500).json({ error: 'Error fetching user books' });
   }
 });
 
