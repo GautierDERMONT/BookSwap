@@ -11,13 +11,13 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// CORS Configuration
+// CORS Configuration - CORRIGÉ
 app.use(cors({
   origin: 'http://localhost:5173',
   credentials: true
 }));
 
-// Static files
+// Static files - MODIFIÉ pour inclure les en-têtes CORS
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
@@ -26,12 +26,10 @@ const booksRoutes = require('./routes/books');
 const messagesRoutes = require('./routes/messages');
 const favoritesRoutes = require('./routes/favorites');
 
-
 app.use('/api/auth', authRoutes);
 app.use('/api/books', booksRoutes);
 app.use('/api', messagesRoutes);
 app.use('/api', favoritesRoutes);
-
 
 // Logging middleware
 app.use((req, res, next) => {

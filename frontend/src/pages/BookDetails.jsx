@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import api from '../services/api';
 import './BookDetails.css';
@@ -220,18 +220,30 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
             <div className="book-details-meta">
               <p className="publisher-info">
                 <strong>Proposé par :</strong>
-                {book.avatar ? (
-                  <img 
-                    src={`${API_URL}${book.avatar}`}
-                    alt={`Avatar de ${book.username}`}
-                    className="publisher-avatar"
-                    onError={(e) => {
-                      e.target.src = `${API_URL}/default-avatar.png`;
-                      console.error("Erreur de chargement de l'avatar:", book.avatar);
-                    }}
-                  />
-                ) : null}
-                <span>{book.username || 'Anonyme'}</span>
+                <Link 
+                  to={`/user/${book.user.id}`} 
+                  className="publisher-link"
+                  style={{ color: 'inherit', textDecoration: 'none' }}
+                  onClick={(e) => {
+                    if (currentUser && (currentUser.id === book.user.id || currentUser.userId === book.user.id)) {
+                      e.preventDefault();
+                      navigate('/profile');
+                    }
+                  }}
+                >
+                  {book.avatar ? (
+                    <img 
+                      src={`${API_URL}${book.avatar}`}
+                      alt={`Avatar de ${book.username}`}
+                      className="publisher-avatar"
+                      onError={(e) => {
+                        e.target.src = `${API_URL}/default-avatar.png`;
+                        console.error("Erreur de chargement de l'avatar:", book.avatar);
+                      }}
+                    />
+                  ) : null}
+                  <span style={{ marginLeft: '8px' }}>{book.username || 'Anonyme'}</span>
+                </Link>
               </p>
               <p><strong>Catégorie :</strong> {book.category || 'Non spécifié'}</p>
               <p><strong>État :</strong> {book.condition || 'Non spécifié'}</p>

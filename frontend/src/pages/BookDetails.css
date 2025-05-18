@@ -13,9 +13,9 @@
     --max-width-page: 1200px;
     --max-width-images: 500px;
     --max-width-info: 600px;
-  }
+}
 
-  .edit-button {
+.edit-button {
     background-color: #4CAF50;
     color: white;
     padding: 10px 20px;
@@ -26,13 +26,13 @@
     margin-top: 20px;
     width: 100%;
     transition: background-color 0.3s;
-  }
-  
-  .edit-button:hover {
+}
+
+.edit-button:hover {
     background-color: #45a049;
-  }
-  
-  .message-button {
+}
+
+.message-button {
     background-color: #2196F3;
     color: white;
     padding: 10px 20px;
@@ -43,42 +43,37 @@
     margin-top: 20px;
     width: 100%;
     transition: background-color 0.3s;
-  }
-  
-  .message-button:hover {
+}
+
+.message-button:hover {
     background-color: #0b7dda;
-  }
-  
-  /* Wrapper pour centrage vertical et horizontal */
-  .book-details-wrapper {
+}
+
+.book-details-wrapper {
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
     background: var(--background-page);
-  }
-  
-  /* ----- Layout principal ----- */
-  .book-details-page {
+}
+
+.book-details-page {
     display: flex;
     justify-content: center;
     align-items: flex-start;
     gap: 100px;
     max-width: var(--max-width-page);
-    margin: -100px auto 0 auto; /* ou margin-top: 40px par exemple */
+    margin: -100px auto 0 auto;
     width: 100%;
-  }
-  
-  
-  /* ----- Bloc images ----- */
-  .book-details-images {
+}
+
+.book-details-images {
     flex: 1;
     position: relative;
     max-width: var(--max-width-images);
-  }
-  
-  /* Grille d'images */
-  .book-details-image-grid {
+}
+
+.book-details-image-grid {
     display: grid;
     grid-template-columns: 2fr 1fr;
     grid-template-rows: 1fr 1fr;
@@ -90,10 +85,9 @@
     overflow: hidden;
     background: #f8f8f8;
     position: relative;
-  }
-  
-  /* Image principale */
-  .book-details-main-image {
+}
+
+.book-details-main-image {
     grid-column: 1 / 2;
     grid-row: 1 / 3;
     border-radius: var(--border-radius) 0 0 var(--border-radius);
@@ -103,17 +97,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-  .book-details-main-image img {
+}
+
+.book-details-main-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     cursor: pointer;
     display: block;
-  }
-  
-  /* Miniatures à droite */
-  .book-details-thumbnail-frame {
+}
+
+.book-details-thumbnail-frame {
     width: 100%;
     height: 100%;
     overflow: hidden;
@@ -121,18 +115,21 @@
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-  .book-details-thumbnail-frame:nth-child(2) {
+}
+
+.book-details-thumbnail-frame:nth-child(2) {
     grid-column: 2 / 3;
     grid-row: 1 / 2;
     border-radius: 0 var(--border-radius) 0 0;
-  }
-  .book-details-thumbnail-frame:nth-child(3) {
+}
+
+.book-details-thumbnail-frame:nth-child(3) {
     grid-column: 2 / 3;
     grid-row: 2 / 3;
     border-radius: 0 0 var(--border-radius) 0;
-  }
-  .book-details-thumbnail {
+}
+
+.book-details-thumbnail {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -140,13 +137,13 @@
     transition: opacity 0.2s ease;
     border-radius: inherit;
     display: block;
-  }
-  .book-details-thumbnail:hover {
+}
+
+.book-details-thumbnail:hover {
     opacity: 0.9;
-  }
-  
-  /* Affichage texte si pas d'image */
-  .empty-image {
+}
+
+.empty-image {
     width: 100%;
     height: 100%;
     color: #888;
@@ -158,10 +155,9 @@
     background: #e9e9e9;
     text-align: center;
     padding: 10px;
-  }
-  
-  /* Bouton favori */
-  .favorite-button {
+}
+
+.favorite-button {
     position: absolute;
     top: 8px;
     right: 8px;
@@ -173,13 +169,13 @@
     cursor: pointer;
     transition: background 0.2s ease;
     z-index: 10;
-  }
-  .favorite-button:hover {
+}
+
+.favorite-button:hover {
     background: var(--background-favorite-hover);
-  }
-  
-  /* ----- Bloc infos (centré) ----- */
-  .book-details-info {
+}
+
+.book-details-info {
     flex: 1;
     max-width: var(--max-width-info);
     background: var(--background-card);
@@ -188,47 +184,56 @@
     box-shadow: var(--box-shadow);
     display: flex;
     flex-direction: column;
-    /* Ajout d'une propriété qui peut éliminer un espace excédentaire */
-    margin-bottom: 0; /* S'il y a une marge par défaut, on l'élimine */
-    height: auto; /* Laissez la hauteur s'ajuster en fonction du contenu */
-    }
+    justify-content: space-between;
+    min-height: 100%;
+    margin-bottom: 0;
+    height: auto;
+}
 
-  .book-details-info h1 {
+.book-details-info h1 {
     font-size: 24px;
     margin-bottom: 8px;
     word-break: break-word;
-  }
-  .book-details-info h2 {
+}
+
+.book-details-info h2 {
     font-size: 18px;
     color: #666;
     margin-bottom: 12px;
     word-break: break-word;
-  }
-  .book-details-meta {
+}
+
+.book-details-meta {
     margin-bottom: 15px;
-  }
-  .book-details-meta p {
+}
+
+.book-details-meta p {
     margin: 5px 0;
     font-size: 14px;
     word-break: break-word;
-  }
-  .book-details-description {
-    margin-bottom: 15px;
-  }
-  .book-details-description h3 {
+}
+
+.book-details-description {
+    margin-bottom: 10px;
+    flex-grow: 1;
+    overflow-y: auto;
+    max-height: 200px;
+}
+
+.book-details-description h3 {
     font-size: 18px;
     color: #333;
     margin-bottom: 8px;
-  }
-  .book-details-description p {
+}
+
+.book-details-description p {
     font-size: 14px;
     line-height: 1.5;
     word-break: break-word;
     white-space: pre-wrap;
-  }
-  
-  /* Bouton message */
-  .message-button {
+}
+
+.message-button {
     padding: 12px 20px;
     background: var(--primary);
     color: #fff;
@@ -240,13 +245,13 @@
     margin-top: 20px;
     transition: background 0.3s;
     text-align: center;
-  }
-  .message-button:hover {
+}
+
+.message-button:hover {
     background: var(--primary-hover);
-  }
-  
-  /* ----- Modal image zoomée ----- */
-  .zoomed-image-modal {
+}
+
+.zoomed-image-modal {
     position: fixed;
     top: 0; left: 0;
     width: 100vw; height: 100vh;
@@ -255,29 +260,33 @@
     justify-content: center;
     align-items: center;
     z-index: 1000;
-  }
-  .zoomed-image-container {
+}
+
+.zoomed-image-container {
     position: relative;
     width: 80vw;
     height: 80vh;
     display: flex;
     justify-content: center;
     align-items: center;
-  }
-  .zoomed-image {
+}
+
+.zoomed-image {
     max-width: 80vw;
     max-height: 80vh;
     object-fit: contain;
-  }
-  .image-navigation {
+}
+
+.image-navigation {
     position: absolute;
     width: 100%;
     display: flex;
     justify-content: space-between;
     padding: 0 20px;
     z-index: 1001;
-  }
-  .nav-arrow {
+}
+
+.nav-arrow {
     background: rgba(255,255,255,0.2);
     color: #fff;
     border: none;
@@ -290,39 +299,38 @@
     align-items: center;
     cursor: pointer;
     transition: background 0.3s;
-  }
+}
 
-
-  .book-actions {
+.book-actions {
     display: flex;
     gap: 10px;
-    margin-top: 20px;
-  }
-  
-  .edit-button {
+    margin-top: auto;
+    padding-top: 20px;
+}
+
+.edit-button {
     background-color: #4CAF50;
     color: white;
     padding: 10px 15px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-  }
-  
-  .delete-button {
+}
+
+.delete-button {
     background-color: #f44336;
     color: white;
     padding: 10px 15px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-  }
-  
-  
+}
 
-  .nav-arrow:hover {
+.nav-arrow:hover {
     background: rgba(255,255,255,0.4);
-  }
-  .close-button {
+}
+
+.close-button {
     position: absolute;
     top: 10px;
     right: 10px;
@@ -337,109 +345,118 @@
     justify-content: center;
     align-items: center;
     cursor: pointer;
-  }
-  .close-button:hover {
-    background: rgba(255,255,255,0.4);
-  }
+}
 
-    .book-publisher {
+.close-button:hover {
+    background: rgba(255,255,255,0.4);
+}
+
+.book-publisher {
     display: flex;
     align-items: center;
     gap: 10px;
     margin-bottom: 8px;
-  }
+}
 
-    .publisher-info {
+.publisher-info {
     display: flex;
     align-items: center;
     gap: 8px;
-  }
+}
 
-  .publisher-avatar {
+.publisher-info a {
+    color: inherit;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+}
+
+
+
+.publisher-info a:hover {
+    text-decoration: underline;
+}
+
+.publisher-avatar {
     width: 32px;
     height: 32px;
     border-radius: 50%;
     object-fit: cover;
-  }
-  
-  /* ----- Responsive ----- */
-  @media (max-width: 1000px) {
-    .book-details-page {
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: var(--gap-mobile);
-      min-height: 100vh;
-      width: 100%;
-    }
-    .book-details-images,
-    .book-details-info {
-      width: 100%;
-      max-width: var(--max-width-images);
-    }
-    .book-details-info {
-      max-width: var(--max-width-info);
-      height: auto !important;
-    }
-    .book-details-image-grid {
-      max-height: 60vw;
-    }
-  }
-  
-  /* Ajouter ces styles dans BookDetails.css et Messages.css */
+}
+
 .availability-disponible {
-  color: #4CAF50;
-  background-color: #e8f5e9;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
+    color: #4CAF50;
+    background-color: #e8f5e9;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
 }
 
 .availability-réservé {
-  color: #FF9800;
-  background-color: #fff3e0;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
+    color: #FF9800;
+    background-color: #fff3e0;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
 }
 
 .availability-echangé {
-  color: #F44336;
-  background-color: #ffebee;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
+    color: #F44336;
+    background-color: #ffebee;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
 }
 
 .message-book-availability {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
-/* Pour Messages */
 .message-conv-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-  margin-right: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 10px;
 }
 
-/* Pour BookDetails */
 .user-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .user-avatar {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  object-fit: cover;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
 }
 
+@media (max-width: 1000px) {
+    .book-details-page {
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: var(--gap-mobile);
+        min-height: 100vh;
+        width: 100%;
+    }
+    .book-details-images,
+    .book-details-info {
+        width: 100%;
+        max-width: var(--max-width-images);
+    }
+    .book-details-info {
+        max-width: var(--max-width-info);
+        height: auto !important;
+    }
+    .book-details-image-grid {
+        max-height: 60vw;
+    }
+}

@@ -98,7 +98,7 @@ const AddBook = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
   
-    if (name === 'description' && countWords(value) > 50) {
+    if (name === 'description' && countWords(value) > 100) {
       return;
     }
   
@@ -160,7 +160,7 @@ const AddBook = () => {
 
   return (
     <div className="add-book-container">
-      <h2>Ajouter un livre</h2>
+      <h2>Ajouter un livre que vous souhaitez échanger</h2>
       {error && <div className="alert error">{error}</div>}
       
       <form onSubmit={handleSubmit}>
@@ -302,7 +302,7 @@ const AddBook = () => {
             required
             rows="4"
           />
-          <small>{countWords(formData.description)} / 50 mots</small>
+          <small>{countWords(formData.description)} / 100 mots</small>
         </div>
 
         <button 

@@ -221,6 +221,10 @@ const Messages = ({ currentUser }) => {
     });
   };
 
+  const handleProfileClick = (userId) => {
+    navigate(userId === currentUser.id ? '/profile' : `/user/${userId}`);
+  };
+
   if (loading) {
     return (
       <div className="message-loading">
@@ -255,11 +259,25 @@ const Messages = ({ currentUser }) => {
                     src={conv.interlocutor_avatar}
                     alt={`Avatar de ${conv.interlocutor_name}`}
                     className="message-conv-avatar"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleProfileClick(conv.interlocutor_id);
+                    }}
+                    style={{ cursor: 'pointer' }}
                   />
                 )}
                 <div className="message-conv-info">
                   <div className="message-conv-header">
-                    <h4 className="message-conv-name">{conv.interlocutor_name}</h4>
+                    <h4 
+                      className="message-conv-name"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleProfileClick(conv.interlocutor_id);
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {conv.interlocutor_name}
+                    </h4>
                     <span className="message-conv-date">{formatDate(conv.last_message_date)}</span>
                   </div>
                   <p className="message-conv-preview">
@@ -306,6 +324,8 @@ const Messages = ({ currentUser }) => {
                           src={`http://localhost:5001${msg.sender_avatar}`}
                           alt={`Avatar de ${msg.sender_name}`}
                           className="message-sender-avatar"
+                          onClick={() => handleProfileClick(msg.sender_id)}
+                          style={{ cursor: 'pointer' }}
                         />
                       )}
                       <div className={`message-bubble ${msg.sender_id === currentUser.id ? 'sent' : 'received'}`}>
@@ -389,8 +409,14 @@ const Messages = ({ currentUser }) => {
                     }
                     alt={`Avatar de ${currentBook?.user?.username || 'utilisateur'}`}
                     className="message-book-publisher-avatar"
+                    onClick={() => handleProfileClick(currentBook?.user?.id)}
+                    style={{ cursor: 'pointer' }}
                   />
-                  <p className="publisher-name">
+                  <p 
+                    className="publisher-name"
+                    onClick={() => handleProfileClick(currentBook?.user?.id)}
+                    style={{ cursor: 'pointer' }}
+                  >
                     {selectedConversation?.publisher_name || currentBook?.user?.username || 'Non spécifié'}
                   </p>
                 </div>

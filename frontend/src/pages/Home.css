@@ -93,8 +93,10 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 20px;
+    margin-left: 10px; /* DÉCALAGE VERS LA DROITE */
     margin-top: 20px;
-    padding: 20px;
+    padding: 10; /* Supprime le padding inutile */
+    width: 100%; /* Assure que le conteneur prend toute la largeur */
   }
   
   /* Style de la carte du livre */

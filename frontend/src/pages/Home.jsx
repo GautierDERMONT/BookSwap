@@ -81,7 +81,7 @@ const HomePage = ({ isAuthenticated, currentUser, onOpenLogin }) => {
 
       <main className="home-content-standalone">
         <h1>Parcourir la liste des livres:</h1>
-       
+       <br />
         <div className="book-list">
           {loading ? (
             <p>Chargement des livres...</p>

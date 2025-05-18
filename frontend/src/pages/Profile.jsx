@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import './Profile.css';
 import BookCard from '../components/BookCard';
 
-const Profile = ({ currentUser }) => {
+const Profile = ({ currentUser, isPublicProfile = false }) => {
   const [formData, setFormData] = useState({
     username: '',
     location: '',
@@ -17,23 +17,39 @@ const Profile = ({ currentUser }) => {
   const [message, setMessage] = useState({ text: '', type: '' });
   const [userBooks, setUserBooks] = useState([]);
   const [loadingBooks, setLoadingBooks] = useState(true);
+  const [profileUser, setProfileUser] = useState(null);
   const navigate = useNavigate();
+  const { userId } = useParams();
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await axios.get('http://localhost:5001/api/auth/profile', {
-          withCredentials: true
-        });
-
-        setFormData({
-          username: response.data.username,
-          location: response.data.location || '',
-          bio: response.data.bio || '',
-          avatar: null,
-          deleteAvatar: false
-        });
-        setTempAvatar(response.data.avatar ? `http://localhost:5001${response.data.avatar}` : '');
+        if (isPublicProfile && userId) {
+          const response = await axios.get(`http://localhost:5001/api/auth/profile/${userId}`, {
+            withCredentials: true
+          });
+          setProfileUser(response.data);
+          setFormData({
+            username: response.data.username,
+            location: response.data.location || '',
+            bio: response.data.bio || '',
+            avatar: null,
+            deleteAvatar: false
+          });
+          setTempAvatar(response.data.avatar ? `http://localhost:5001${response.data.avatar}` : '');
+        } else {
+          const response = await axios.get('http://localhost:5001/api/auth/profile', {
+            withCredentials: true
+          });
+          setFormData({
+            username: response.data.username,
+            location: response.data.location || '',
+            bio: response.data.bio || '',
+            avatar: null,
+            deleteAvatar: false
+          });
+          setTempAvatar(response.data.avatar ? `http://localhost:5001${response.data.avatar}` : '');
+        }
       } catch (error) {
         console.error('Error fetching profile:', error);
         setMessage({ text: 'Erreur lors du chargement du profil', type: 'error' });
@@ -41,23 +57,24 @@ const Profile = ({ currentUser }) => {
     };
 
     const fetchUserBooks = async () => {
-        try {
-          const response = await axios.get(`http://localhost:5001/api/books/user/${currentUser.id}`, {
-            withCredentials: true
-          });
-          setUserBooks(response.data.books);
-        } catch (error) {
-          console.error('Error fetching user books:', error);
-        } finally {
-          setLoadingBooks(false);
-        }
-      };
+      try {
+        const targetUserId = isPublicProfile ? userId : currentUser.id;
+        const response = await axios.get(`http://localhost:5001/api/books/user/${targetUserId}`, {
+          withCredentials: true
+        });
+        setUserBooks(response.data.books);
+      } catch (error) {
+        console.error('Error fetching user books:', error);
+      } finally {
+        setLoadingBooks(false);
+      }
+    };
 
     fetchProfile();
-    if (currentUser?.id) {
+    if (currentUser?.id || userId) {
       fetchUserBooks();
     }
-  }, [currentUser]);
+  }, [currentUser, userId, isPublicProfile]);
 
   const getDefaultAvatar = (username) => {
     if (!username) return '';
@@ -182,121 +199,148 @@ const Profile = ({ currentUser }) => {
 
   return (
     <div className="profile-page">
-      <h1>Mon Profil</h1>
+      <h1>{isPublicProfile ? `Profil de ${formData.username}` : 'Mon Profil'}</h1>
 
-      <form onSubmit={handleSubmit} className="profile-form-horizontal">
-        <div className="profile-left">
-          <div className="profile-avatar-container">
-            {!formData.deleteAvatar && tempAvatar ? (
-              <img 
-                src={tempAvatar} 
-                alt="Avatar" 
-                className="profile-avatar-image"
-              />
-            ) : (
-              getDefaultAvatar(formData.username)
-            )}
-          </div>
-          <div className="avatar-actions">
-            <input
-              type="file"
-              id="profile-avatar-upload"
-              accept="image/*"
-              onChange={handleAvatarChange}
-              disabled={isLoading}
-            />
-            <label htmlFor="profile-avatar-upload" className="profile-upload-button">
-              {isLoading ? 'Chargement...' : 'Changer d\'avatar'}
-            </label>
-            {!formData.deleteAvatar && tempAvatar && (
-              <button 
-                type="button"
-                onClick={handleDeleteAvatar}
-                className="profile-delete-button"
-                disabled={isLoading}
-              >
-                Supprimer l'avatar
-              </button>
-            )}
-            {formData.deleteAvatar && (
-              <button 
-                type="button"
-                onClick={handleCancelDelete}
-                className="profile-cancel-button"
-                disabled={isLoading}
-              >
-                Annuler suppression
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div className="profile-right">
-          <div className="profile-form-group">
-            <label>Nom d'utilisateur</label>
-            <input
-              type="text"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="profile-form-group">
-            <label>Localisation</label>
-            <input
-              type="text"
-              name="location"
-              value={formData.location}
-              onChange={handleChange}
-            />
-          </div>
-        </div>
-
-        <div className="profile-form-bio">
-          <div className="profile-form-group">
-            <label>Bio</label>
-            <textarea
-              name="bio"
-              value={formData.bio}
-              onChange={handleChange}
-              rows="4"
-            />
-          </div>
-
-          {message.text && (
-            <div className={`profile-message ${message.type}`}>
-              {message.text}
+      {!isPublicProfile ? (
+        <form onSubmit={handleSubmit} className="profile-form-horizontal">
+          <div className="profile-left">
+            <div className="profile-avatar-container">
+              {!formData.deleteAvatar && tempAvatar ? (
+                <img 
+                  src={tempAvatar} 
+                  alt="Avatar" 
+                  className="profile-avatar-image"
+                />
+              ) : (
+                getDefaultAvatar(formData.username)
+              )}
             </div>
-          )}
+            <div className="avatar-actions">
+              <input
+                type="file"
+                id="profile-avatar-upload"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                disabled={isLoading}
+              />
+              <label htmlFor="profile-avatar-upload" className="profile-upload-button">
+                {isLoading ? 'Chargement...' : 'Changer d\'avatar'}
+              </label>
+              {!formData.deleteAvatar && tempAvatar && (
+                <button 
+                  type="button"
+                  onClick={handleDeleteAvatar}
+                  className="profile-delete-button"
+                  disabled={isLoading}
+                >
+                  Supprimer l'avatar
+                </button>
+              )}
+              {formData.deleteAvatar && (
+                <button 
+                  type="button"
+                  onClick={handleCancelDelete}
+                  className="profile-cancel-button"
+                  disabled={isLoading}
+                >
+                  Annuler suppression
+                </button>
+              )}
+            </div>
+          </div>
 
-          <button type="submit" disabled={isLoading} className="profile-submit-button">
-            {isLoading ? 'Enregistrement...' : 'Enregistrer les modifications'}
-          </button>
+          <div className="profile-right">
+            <div className="profile-form-group">
+              <label>Nom d'utilisateur</label>
+              <input
+                type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="profile-form-group">
+              <label>Localisation</label>
+              <input
+                type="text"
+                name="location"
+                value={formData.location}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+
+          <div className="profile-form-bio">
+            <div className="profile-form-group">
+              <label>Bio</label>
+              <textarea
+                name="bio"
+                value={formData.bio}
+                onChange={handleChange}
+                rows="4"
+              />
+            </div>
+
+            {message.text && (
+              <div className={`profile-message ${message.type}`}>
+                {message.text}
+              </div>
+            )}
+
+            <button type="submit" disabled={isLoading} className="profile-submit-button">
+              {isLoading ? 'Enregistrement...' : 'Enregistrer les modifications'}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <div className="profile-public-info">
+          <div className="profile-left">
+            <div className="profile-avatar-container">
+              {tempAvatar ? (
+                <img 
+                  src={tempAvatar} 
+                  alt="Avatar" 
+                  className="profile-avatar-image"
+                />
+              ) : (
+                getDefaultAvatar(formData.username)
+              )}
+            </div>
+          </div>
+          <div className="profile-right">
+            <div className="profile-public-details">
+              <h2>{formData.username}</h2>
+              {formData.location && <p><strong>Localisation:</strong> {formData.location}</p>}
+              {formData.bio && (
+                <div className="profile-bio">
+                  <h3>Bio</h3>
+                  <p>{formData.bio}</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </form>
+      )}
 
       <div className="user-books-section">
-        <h2>Vos livres ({userBooks.length})</h2>
+        <h2>Livres {isPublicProfile ? 'de cet utilisateur' : 'postés'} ({userBooks.length})</h2>
         
         {loadingBooks ? (
-          <p>Chargement de vos livres...</p>
+          <p>Chargement des livres...</p>
         ) : userBooks.length > 0 ? (
-            <div className="user-books-grid">
-              {userBooks.map(book => (
-                
-                <div key={book.id} className="user-book-card-wrapper">
-                  
-                  <BookCard 
-                  
-                    book={book} 
-                    isAuthenticated={true} 
-                    currentUser={currentUser} 
-                    onRequireLogin={() => {}} 
-                    hideOwnerBadge={true}  
-                  />
-                  <br />
+          <div className="user-books-grid">
+            {userBooks.map(book => (
+              <div key={book.id} className="user-book-card-wrapper">
+                <BookCard 
+                  book={book} 
+                  isAuthenticated={!!currentUser} 
+                  currentUser={currentUser} 
+                  onRequireLogin={() => {}} 
+                  hideOwnerBadge={true}  
+                />
+                {!isPublicProfile && (
                   <div className="book-hover-actions">
                     <button 
                       className="edit-book-button"
@@ -308,18 +352,21 @@ const Profile = ({ currentUser }) => {
                       ✏️ Modifier
                     </button>
                   </div>
-                </div>
-              ))}
-            </div>
+                )}
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="no-books-message">
-            <p>Vous n'avez pas encore ajouté de livres.</p>
-            <button 
-              className="add-book-button"
-              onClick={() => navigate('/add-book')}
-            >
-              Ajouter un livre
-            </button>
+            <p>{isPublicProfile ? 'Cet utilisateur n\'a pas encore ajouté de livres.' : 'Vous n\'avez pas encore ajouté de livres.'}</p>
+            {!isPublicProfile && (
+              <button 
+                className="add-book-button"
+                onClick={() => navigate('/add-book')}
+              >
+                Ajouter un livre
+              </button>
+            )}
           </div>
         )}
       </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Plus, X, Upload } from 'react-feather';
+import { Plus, X, Upload, Loader } from 'react-feather';
 import './AddBook.css';
 
 const API_URL = 'http://localhost:5001';
@@ -13,6 +13,7 @@ const EditBook = () => {
   const [existingImages, setExistingImages] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
@@ -32,6 +33,7 @@ const EditBook = () => {
 
   useEffect(() => {
     const fetchBookData = async () => {
+      setIsLoading(true);
       try {
         const { data } = await axios.get(`${API_URL}/api/books/${id}`);
         const book = data.book;
@@ -53,8 +55,9 @@ const EditBook = () => {
           })));
         }
       } catch (err) {
-        console.error("Erreur lors du chargement du livre:", err);
         setError("Erreur lors du chargement du livre");
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -114,7 +117,7 @@ const EditBook = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
   
-    if (name === 'description' && countWords(value) > 50) {
+    if (name === 'description' && countWords(value) > 100) {
       return;
     }
   
@@ -126,9 +129,9 @@ const EditBook = () => {
     setIsSubmitting(true);
     setError(null);
     setSuccess(null);
-  
+
     const requiredFields = ['title', 'author', 'category', 'condition', 'location', 'description', 'availability'];
-    const missingFields = requiredFields.filter(field => !formData[field] || formData[field].trim().length === 0);
+    const missingFields = requiredFields.filter(field => !formData[field]?.trim());
   
     if (missingFields.length > 0) {
       setError('Veuillez remplir tous les champs obligatoires');
@@ -141,51 +144,46 @@ const EditBook = () => {
       setIsSubmitting(false);
       return;
     }
-  
+
     try {
       const formDataToSend = new FormData();
-      formDataToSend.append('title', formData.title.trim());
-      formDataToSend.append('author', formData.author.trim());
-      formDataToSend.append('category', formData.category.trim());
-      formDataToSend.append('condition', formData.condition.trim());
-      formDataToSend.append('location', formData.location.trim());
-      formDataToSend.append('description', formData.description.trim());
-      formDataToSend.append('availability', formData.availability);
-
-      images.forEach((image) => {
-        formDataToSend.append('images', image);
+      Object.entries(formData).forEach(([key, value]) => {
+        formDataToSend.append(key, value.trim());
       });
 
-      existingImages.forEach((image) => {
-        formDataToSend.append('existingImages', image.path);
-      });
+      images.forEach(image => formDataToSend.append('images', image));
+      existingImages.forEach(image => formDataToSend.append('existingImages', image.path));
 
-      const response = await axios.put(`${API_URL}/api/books/${id}`, formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        },
+      await axios.put(`${API_URL}/api/books/${id}`, formDataToSend, {
+        headers: { 'Content-Type': 'multipart/form-data' },
         withCredentials: true
       });
 
       setSuccess('Livre mis à jour avec succès');
-      setTimeout(() => {
-        navigate(`/books/${id}`);
-      }, 1500);
-      
+      setTimeout(() => navigate(`/books/${id}`), 1500);
     } catch (err) {
-      console.error('Erreur lors de la modification:', err);
-      setError(err.response?.data?.error || 'Erreur lors de la modification du livre');
+      setError(err.response?.data?.error || 'Erreur lors de la modification');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="add-book-container loading">
+        <Loader className="spinner" size={48} />
+        <p>Chargement du livre...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="add-book-container">
       <h2>Modifier le livre</h2>
+      
       {error && <div className="alert error">{error}</div>}
       {success && <div className="alert success">{success}</div>}
-      
+
       <form onSubmit={handleSubmit}>
         <div
           className={`image-upload ${isDragging ? 'dragging' : ''}`}
@@ -342,15 +340,22 @@ const EditBook = () => {
             required
             rows="4"
           />
-          <small>{countWords(formData.description)} / 50 mots</small>
+          <small>{countWords(formData.description)} / 100 mots</small>
         </div>
 
         <button 
           type="submit" 
-          className="submit-button"
+          className={`submit-button ${isSubmitting ? 'submitting' : ''}`}
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'Enregistrement en cours...' : 'Enregistrer les modifications'}
+          {isSubmitting ? (
+            <>
+              <Loader className="button-spinner" size={18} />
+              <span>Enregistrement en cours...</span>
+            </>
+          ) : (
+            'Enregistrer les modifications'
+          )}
         </button>
       </form>
     </div>

@@ -252,6 +252,21 @@ router.delete('/avatar', authenticate, async (req, res) => {
   }
 });
 
+router.get('/profile/:userId', authenticate, async (req, res) => {
+  try {
+    const [users] = await pool.query(
+      'SELECT id, username, avatar, location, bio FROM users WHERE id = ?',
+      [req.params.userId]
+    );
+    
+    if (users.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.json(users[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 module.exports = router;

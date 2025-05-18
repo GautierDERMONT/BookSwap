@@ -205,6 +205,17 @@ function App() {
           />
         } />
 
+          <Route path="/user/:userId" element={
+            isAuthenticated ? (
+              <Profile 
+                currentUser={currentUser} 
+                isPublicProfile={true} 
+              />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } />
+
         <Route path="/favorites" element={
           isAuthenticated ?
             <Favorites currentUser={currentUser} /> :
