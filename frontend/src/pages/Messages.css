@@ -449,6 +449,18 @@
   }
 }
 
+.message-book-date {
+  color: #999;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+.message-book-category {
+  color: #666;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
 @media (max-width: 992px) {
   .message-book-summary {
     display: none;

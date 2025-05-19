@@ -266,27 +266,20 @@ const Messages = ({ currentUser }) => {
                     style={{ cursor: 'pointer' }}
                   />
                 )}
-                <div className="message-conv-info">
-                  <div className="message-conv-header">
-                    <h4 
-                      className="message-conv-name"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleProfileClick(conv.interlocutor_id);
-                      }}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      {conv.interlocutor_name}
-                    </h4>
-                    <span className="message-conv-date">{formatDate(conv.last_message_date)}</span>
+                  <div className="message-conv-info">
+                    <div className="message-conv-header">
+                      <h4 className="message-conv-name">
+                        {conv.interlocutor_name}
+                      </h4>
+                      <span className="message-conv-date">{formatDate(conv.last_message_date)}</span>
+                    </div>
+                    <p className="message-conv-preview">
+                      {conv.last_message?.substring(0, 40) || 'Nouvelle conversation'}
+                      {conv.unread_count > 0 && (
+                        <span className="unread-badge">{conv.unread_count}</span>
+                      )}
+                    </p>
                   </div>
-                  <p className="message-conv-preview">
-                    {conv.last_message?.substring(0, 40) || 'Nouvelle conversation'}
-                    {conv.unread_count > 0 && (
-                      <span className="unread-badge">{conv.unread_count}</span>
-                    )}
-                  </p>
-                </div>
                 <button 
                   className="delete-conversation-btn"
                   onClick={(e) => {
@@ -364,41 +357,49 @@ const Messages = ({ currentUser }) => {
         )}
       </div>
 
-      {selectedConversation && currentBook && (
-        <div className="message-book-summary">
-          <div className="message-book-header">
-            <h3>Détails du livre</h3>
-          </div>
-          
-          <div className="message-book-image">
-            <img
-              src={currentBook.images?.[0] 
-                ? `http://localhost:5001/uploads/${currentBook.images[0]}`
-                : '/placeholder.jpg'
-              }
-              alt={currentBook.title}
-            />
-          </div>
-          
-          <div className="message-book-details">
-            <h4>{currentBook.title}</h4>
-            <p className="message-book-author">{currentBook.author || 'Auteur inconnu'}</p>
+        {selectedConversation && currentBook && (
+          <div className="message-book-summary">
+            <div className="message-book-header">
+              <h3>Détails du livre</h3>
+            </div>
             
-            <div className="message-book-meta">
-              <span className="message-book-condition">État: {currentBook.condition}</span>
-              <span className="message-book-location">
-                <FiMapPin /> {currentBook.location || 'Non spécifiée'}
-              </span>
+            <div className="message-book-image">
+              <img
+                src={currentBook.images?.[0] 
+                  ? `http://localhost:5001/uploads/${currentBook.images[0]}`
+                  : '/placeholder.jpg'
+                }
+                alt={currentBook.title}
+              />
+            </div>
+            
+            <div className="message-book-details">
+              <h4>{currentBook.title}</h4>
+             
+              <p className="message-book-author">{currentBook.author || 'Auteur inconnu'}</p>
+              
+              <p className="message-book-category">Catégorie: {currentBook.category || 'Non spécifiée'}</p>
 
-               <span className={`message-book-availability availability-${currentBook.availability?.toLowerCase()}`}>
+              {/* Ajoutez cette ligne pour afficher la date de création */}
+              <p className="message-book-date" style={{ color: '#999', fontSize: '12px', marginBottom: '12px' }}>
+                Publié le: {formatDate(currentBook.created_at)}
+              </p>
+              
+              <div className="message-book-meta">
+                <span className="message-book-condition">État: {currentBook.condition}</span>
+                <span className="message-book-location">
+                  <FiMapPin /> {currentBook.location || 'Non spécifiée'}
+                </span>
+
+                <span className={`message-book-availability availability-${currentBook.availability?.toLowerCase()}`}>
                   {currentBook.availability || 'Non Spécifié'}
-              </span>
-            </div>
-            
-            <div className="message-book-description">
-              <p>{currentBook.description || 'Aucune description disponible.'}</p>
-            </div>
-            
+                </span>
+              </div>
+              
+              <div className="message-book-description">
+                <p>{currentBook.description || 'Aucune description disponible.'}</p>
+              </div>
+              
               <div className="message-book-publisher">
                 <h4>Publié par :</h4>
                 <div className="publisher-content">
@@ -421,9 +422,9 @@ const Messages = ({ currentUser }) => {
                   </p>
                 </div>
               </div>
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 };
