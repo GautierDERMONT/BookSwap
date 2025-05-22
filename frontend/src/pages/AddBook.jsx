@@ -76,18 +76,26 @@ const AddBook = () => {
   };
 
   const handleFiles = (files) => {
-    const validFiles = files
-      .filter(file => file.type.startsWith('image/'))
-      .slice(0, 3 - images.length);
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    const MAX_FILES = 3;
 
-    if (files.length !== validFiles.length) {
-      setError('Veuillez choisir uniquement des images.');
-    } else {
-      setError(null);
-    }
+    const validFiles = files
+      .filter(file => {
+        if (!file.type.startsWith('image/')) {
+          setError('Veuillez choisir uniquement des images.');
+          return false;
+        }
+        if (file.size > MAX_FILE_SIZE) {
+          setError(`Le fichier ${file.name} est trop volumineux (max 10MB)`);
+          return false;
+        }
+        return true;
+      })
+      .slice(0, MAX_FILES - images.length);
 
     if (validFiles.length) {
       setImages([...images, ...validFiles]);
+      setError(null);
     }
   };
 
@@ -289,7 +297,6 @@ const AddBook = () => {
           >
             <option value="Disponible">Disponible</option>
             <option value="Réservé">Réservé</option>
-            <option value="Echangé">Echangé</option>
           </select>
         </div>
 

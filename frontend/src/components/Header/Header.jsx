@@ -212,7 +212,7 @@ const handleSearch = (e) => {
             >
               <option value="location">Localisation</option>
               <option value="condition">État</option>
-              <option value="genre">Genre</option>
+              <option value="genre">Catégorie</option>
             </select>
             
             {newFilter.type === 'condition' ? (
@@ -231,7 +231,7 @@ const handleSearch = (e) => {
                 type="text"
                 placeholder={newFilter.type === 'location' 
                   ? "Ajouter une localisation..." 
-                  : "Ajouter un genre..."}
+                  : "Ajouter une catégorie..."}
                 value={newFilter.value}
                 onChange={(e) => setNewFilter({ ...newFilter, value: e.target.value })}
                 onKeyPress={(e) => e.key === 'Enter' && addFilter()}

@@ -81,10 +81,31 @@ function App() {
       });
       setActiveModal(null);
 
-      if (location.state?.redirectAfterLogin) {
-        navigate(location.state.redirectAfterLogin);
+      // Cas 1: Redirection vers l'édition si c'est le propriétaire du livre
+      if (location.state?.isOwnerRedirect) {
+        navigate(`/books/${location.state.bookId}/edit`, { replace: true });
+      }
+      // Cas 2: Redirection vers la messagerie pour une nouvelle conversation
+      else if (location.state?.fromMessage) {
+        navigate('/messages', { 
+          state: { 
+            bookId: location.state.bookId,
+            recipientId: location.state.recipientId,
+            bookInfo: location.state.bookInfo,
+            interlocutor: location.state.interlocutor
+          },
+          replace: true
+        });
+      }
+      // Cas 3: Redirection vers le profil si sur sa propre page publique
+      else if (location.pathname.startsWith('/user/') && response.data.userId === location.pathname.split('/')[2]) {
+        navigate('/profile', { replace: true });
+      }
+      // Cas par défaut
+      else if (location.state?.redirectAfterLogin) {
+        navigate(location.state.redirectAfterLogin, { replace: true });
       } else {
-        navigate(location.pathname);
+        navigate(location.pathname, { replace: true });
       }
     } catch (error) {
       console.error('Login failed:', error);
@@ -182,7 +203,7 @@ function App() {
         } />
         <Route path="/profile" element={
           isAuthenticated ? 
-            <Profile currentUser={currentUser} /> : 
+            <Profile currentUser={currentUser} executeAfterAuth={executeAfterAuth} /> : 
             <Navigate to="/" state={{ redirectAfterLogin: '/profile' }} replace />
         } />
         
@@ -193,7 +214,7 @@ function App() {
         } />
         <Route path="/messages/:conversationId" element={
           isAuthenticated ? 
-            <Messages currentUser={currentUser} /> : 
+            <Messages currentUser={currentUser} isAuthenticated={isAuthenticated} /> : 
             <Navigate to="/" state={{ redirectAfterLogin: `/messages/${params.conversationId}` }} replace />
         } />
 
@@ -204,17 +225,13 @@ function App() {
             executeAfterAuth={executeAfterAuth}
           />
         } />
-
-          <Route path="/user/:userId" element={
-            isAuthenticated ? (
-              <Profile 
-                currentUser={currentUser} 
-                isPublicProfile={true} 
-              />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          } />
+        <Route path="/user/:userId" element={
+          <Profile 
+            currentUser={currentUser} 
+            isPublicProfile={true} 
+            executeAfterAuth={executeAfterAuth}
+          />
+        } />
 
         <Route path="/favorites" element={
           isAuthenticated ?

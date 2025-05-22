@@ -7,7 +7,6 @@ const { pool } = require('../config/db');
 const router = express.Router();
 const multer = require('multer');
 
-// Nouvelle configuration multer pour les avatars
 const avatarStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(__dirname, '../uploads');
@@ -32,14 +31,10 @@ const upload = multer({
     }
   },
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB
+    fileSize: 5 * 1024 * 1024
   }
 });
 
-
-
-
-// Middleware d'authentification
 const authenticate = async (req, res, next) => {
   const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
   
@@ -189,7 +184,6 @@ router.put('/avatar', authenticate, upload.single('avatar'), async (req, res) =>
     const fileName = `avatar_${req.userId}${ext}`;
     const filePath = path.join(__dirname, '../uploads', fileName);
 
-    // Supprimer l'ancien avatar s'il existe
     const [users] = await pool.query('SELECT avatar FROM users WHERE id = ?', [req.userId]);
     if (users[0].avatar) {
       const oldAvatarPath = path.join(__dirname, '../uploads', path.basename(users[0].avatar));
@@ -198,13 +192,10 @@ router.put('/avatar', authenticate, upload.single('avatar'), async (req, res) =>
       }
     }
 
-    // Si le fichier est déjà au bon endroit (cas où l'extension est identique)
     if (req.file.path !== filePath) {
-      // Déplacer le fichier seulement si nécessaire
       fs.renameSync(req.file.path, filePath);
     }
     
-    // Mettre à jour la base de données
     await pool.query(
       'UPDATE users SET avatar = ? WHERE id = ?',
       [`/uploads/${fileName}`, req.userId]
@@ -217,7 +208,6 @@ router.put('/avatar', authenticate, upload.single('avatar'), async (req, res) =>
   } catch (err) {
     console.error('Avatar update error:', err);
     
-    // Supprimer le fichier temporaire en cas d'erreur
     if (req.file && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
@@ -231,7 +221,6 @@ router.put('/avatar', authenticate, upload.single('avatar'), async (req, res) =>
 
 router.delete('/avatar', authenticate, async (req, res) => {
   try {
-    // Récupérer le chemin de l'avatar actuel
     const [users] = await pool.query('SELECT avatar FROM users WHERE id = ?', [req.userId]);
     if (users[0].avatar) {
       const avatarPath = path.join(__dirname, '../uploads', path.basename(users[0].avatar));
@@ -240,7 +229,6 @@ router.delete('/avatar', authenticate, async (req, res) => {
       }
     }
 
-    // Mettre à jour la base de données
     await pool.query(
       'UPDATE users SET avatar = NULL WHERE id = ?',
       [req.userId]
@@ -252,7 +240,7 @@ router.delete('/avatar', authenticate, async (req, res) => {
   }
 });
 
-router.get('/profile/:userId', authenticate, async (req, res) => {
+router.get('/profile/:userId', async (req, res) => {
   try {
     const [users] = await pool.query(
       'SELECT id, username, avatar, location, bio FROM users WHERE id = ?',
@@ -267,6 +255,5 @@ router.get('/profile/:userId', authenticate, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 module.exports = router;

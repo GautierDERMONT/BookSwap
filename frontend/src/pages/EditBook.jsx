@@ -267,7 +267,7 @@ const EditBook = () => {
             />
           </div>
           <div className="form-group">
-            <label>Catégorie *</label>
+            <label>Catégorie*</label>
             <input
               type="text"
               name="category"

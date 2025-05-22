@@ -131,7 +131,7 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
     }
   };
 
-  const handleMessageClick = async () => {
+  const handleMessageClick = () => {
     executeAfterAuth(async () => {
       try {
         const response = await api.post('/conversations', {
@@ -154,7 +154,8 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
               username: book.user.username,
               avatar: book.user.avatar
             }
-          }
+          },
+          replace: true // Ajoutez ceci pour éviter la duplication dans l'historique
         });
       } catch (error) {
         console.error("Erreur lors de la création de la conversation:", error);
@@ -162,6 +163,7 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
       }
     });
   };
+
 
   if (loading) return <div className="book-details-loading">Chargement...</div>;
   if (!book) return <div className="book-details-error">Livre non trouvé</div>;
@@ -220,30 +222,33 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
             <div className="book-details-meta">
               <p className="publisher-info">
                 <strong>Proposé par :</strong>
-                <Link 
-                  to={`/user/${book.user.id}`} 
-                  className="publisher-link"
-                  style={{ color: 'inherit', textDecoration: 'none' }}
-                  onClick={(e) => {
-                    if (currentUser && (currentUser.id === book.user.id || currentUser.userId === book.user.id)) {
-                      e.preventDefault();
-                      navigate('/profile');
-                    }
-                  }}
-                >
-                  {book.avatar ? (
-                    <img 
-                      src={`${API_URL}${book.avatar}`}
-                      alt={`Avatar de ${book.username}`}
-                      className="publisher-avatar"
-                      onError={(e) => {
-                        e.target.src = `${API_URL}/default-avatar.png`;
-                        console.error("Erreur de chargement de l'avatar:", book.avatar);
+                  <Link 
+                      to={`/user/${book.user.id}`} 
+                      className="publisher-link"
+                      onClick={(e) => {
+                        if (currentUser && (currentUser.id === book.user.id || currentUser.userId === book.user.id)) {
+                          e.preventDefault();
+                          navigate('/profile');
+                        }
                       }}
-                    />
-                  ) : null}
-                  <span style={{ marginLeft: '8px' }}>{book.username || 'Anonyme'}</span>
-                </Link>
+                    >
+                      {book.avatar ? (
+                        <img 
+                          src={`${API_URL}${book.avatar}`}
+                          alt={`Avatar de ${book.username}`}
+                          className="header-default-avatar"
+                          onError={(e) => {
+                            e.target.src = `${API_URL}/default-avatar.png`;
+                            console.error("Erreur de chargement de l'avatar:", book.avatar);
+                          }}
+                        />
+                      ) : (
+                        <div className="default-avatar">
+                          {book.username?.charAt(0).toUpperCase() || 'A'}
+                        </div>
+                      )}
+                      <span>{book.username || 'Anonyme'}</span>
+                    </Link>
               </p>
               <p><strong>Catégorie :</strong> {book.category || 'Non spécifié'}</p>
               <p><strong>État :</strong> {book.condition || 'Non spécifié'}</p>

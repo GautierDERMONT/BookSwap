@@ -142,14 +142,14 @@
   flex-direction: row;
   gap: 8px;
   max-width: 75%;
-  padding-left: 40px; /* Crée l'espace pour l'avatar même quand il n'est pas visible */
+  padding-left: 40px;
   position: relative;
 }
 
 .message-sender-avatar {
   position: absolute;
   left: 0;
-  top: -15px; /* Monte l'avatar de 3px par rapport au haut du conteneur */
+  top: -15px;
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -171,12 +171,11 @@
   border-bottom-right-radius: 4px;
 }
 
-/* Ajuster la forme des bulles reçues */
 .message-bubble.received {
   background-color: #e9e9eb;
   color: #333;
   border-radius: 16px;
-  border-top-left-radius: 4px; /* Pointe en haut à gauche */
+  border-top-left-radius: 4px;
 }
 
 .message-content {
@@ -453,6 +452,29 @@
   color: #999;
   font-size: 12px;
   margin-bottom: 12px;
+}
+
+.default-avatar {
+  background-color: #FF5733;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  border-radius: 50%;
+}
+
+.message-conv-avatar, .message-sender-avatar {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #FF5733;
+  color: white;
+  font-weight: bold;
 }
 
 .message-book-category {

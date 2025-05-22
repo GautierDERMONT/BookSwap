@@ -18,6 +18,31 @@ const Messages = ({ currentUser }) => {
   const { id } = useParams();
   const [initialSelectionDone, setInitialSelectionDone] = useState(false);
 
+  const getDefaultAvatar = (username) => {
+    if (!username) return 'U';
+    const firstLetter = username.charAt(0).toUpperCase();
+    const colors = ['#FF5733', '#33FF57', '#3357FF', '#F333FF', '#33FFF3'];
+    const color = colors[firstLetter.charCodeAt(0) % colors.length];
+    
+    return (
+      <div style={{
+        backgroundColor: color,
+        width: '35px',
+        height: '35px',
+        borderRadius: '50%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'white',
+        fontSize: '1rem',
+        fontWeight: 'bold',
+        border: '1px solid #eee'
+      }}>
+        {firstLetter}
+      </div>
+    );
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -29,6 +54,11 @@ const Messages = ({ currentUser }) => {
         if (location.state?.bookId) {
           const { bookId, recipientId } = location.state;
           
+          if (currentUser?.id === recipientId) {
+            navigate(`/books/${bookId}/edit`, { replace: true });
+            return;
+          }
+
           const existingConv = allConvs.find(c => 
             c.book_id === bookId && 
             (c.interlocutor_id === recipientId || c.user1_id === recipientId || c.user2_id === recipientId)
@@ -58,7 +88,7 @@ const Messages = ({ currentUser }) => {
             await loadConversationDetails(response.data.conversationId, bookId);
             navigate(`/messages/${response.data.conversationId}`, { replace: true });
           }
-        } 
+        }
         else if (id) {
           const conv = allConvs.find(c => c.id === parseInt(id));
           if (conv) {
@@ -254,7 +284,7 @@ const Messages = ({ currentUser }) => {
                   }
                 }}
               >
-                {conv.interlocutor_avatar && (
+                {conv.interlocutor_avatar ? (
                   <img 
                     src={conv.interlocutor_avatar}
                     alt={`Avatar de ${conv.interlocutor_name}`}
@@ -265,21 +295,32 @@ const Messages = ({ currentUser }) => {
                     }}
                     style={{ cursor: 'pointer' }}
                   />
-                )}
-                  <div className="message-conv-info">
-                    <div className="message-conv-header">
-                      <h4 className="message-conv-name">
-                        {conv.interlocutor_name}
-                      </h4>
-                      <span className="message-conv-date">{formatDate(conv.last_message_date)}</span>
-                    </div>
-                    <p className="message-conv-preview">
-                      {conv.last_message?.substring(0, 40) || 'Nouvelle conversation'}
-                      {conv.unread_count > 0 && (
-                        <span className="unread-badge">{conv.unread_count}</span>
-                      )}
-                    </p>
+                ) : (
+                  <div className="message-conv-avatar" style={{ 
+                    backgroundColor: '#FF5733', 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontWeight: 'bold'
+                  }}>
+                    {conv.interlocutor_name?.charAt(0).toUpperCase() || 'U'}
                   </div>
+                )}
+                <div className="message-conv-info">
+                  <div className="message-conv-header">
+                    <h4 className="message-conv-name">
+                      {conv.interlocutor_name}
+                    </h4>
+                    <span className="message-conv-date">{formatDate(conv.last_message_date)}</span>
+                  </div>
+                  <p className="message-conv-preview">
+                    {conv.last_message?.substring(0, 40) || 'Nouvelle conversation'}
+                    {conv.unread_count > 0 && (
+                      <span className="unread-badge">{conv.unread_count}</span>
+                    )}
+                  </p>
+                </div>
                 <button 
                   className="delete-conversation-btn"
                   onClick={(e) => {
@@ -312,7 +353,7 @@ const Messages = ({ currentUser }) => {
                   
                   return (
                     <div key={msg.id} className={`message-wrapper ${msg.sender_id === currentUser.id ? 'sent' : 'received'}`}>
-                      {showAvatar && msg.sender_avatar && (
+                      {showAvatar && (msg.sender_avatar ? (
                         <img 
                           src={`http://localhost:5001${msg.sender_avatar}`}
                           alt={`Avatar de ${msg.sender_name}`}
@@ -320,7 +361,18 @@ const Messages = ({ currentUser }) => {
                           onClick={() => handleProfileClick(msg.sender_id)}
                           style={{ cursor: 'pointer' }}
                         />
-                      )}
+                      ) : (
+                        <div className="message-sender-avatar" style={{ 
+                          backgroundColor: '#FF5733', 
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white',
+                          fontWeight: 'bold'
+                        }}>
+                          {msg.sender_name?.charAt(0).toUpperCase() || 'U'}
+                        </div>
+                      ))}
                       <div className={`message-bubble ${msg.sender_id === currentUser.id ? 'sent' : 'received'}`}>
                         <div className="message-content">
                           <p>{msg.content}</p>
@@ -357,74 +409,79 @@ const Messages = ({ currentUser }) => {
         )}
       </div>
 
-        {selectedConversation && currentBook && (
-          <div className="message-book-summary">
-            <div className="message-book-header">
-              <h3>Détails du livre</h3>
+      {selectedConversation && currentBook && (
+        <div className="message-book-summary">
+          <div className="message-book-header">
+            <h3>Détails du livre</h3>
+          </div>
+          
+          <div className="message-book-image">
+            <img
+              src={currentBook.images?.[0] 
+                ? `http://localhost:5001/uploads/${currentBook.images[0]}`
+                : '/placeholder.jpg'
+              }
+              alt={currentBook.title}
+            />
+          </div>
+          
+          <div className="message-book-details">
+            <h4>{currentBook.title}</h4>
+           
+            <p className="message-book-author">{currentBook.author || 'Auteur inconnu'}</p>
+            
+            <p className="message-book-category">Catégorie: {currentBook.category || 'Non spécifiée'}</p>
+
+            <p className="message-book-date" style={{ color: '#999', fontSize: '12px', marginBottom: '12px' }}>
+              Publié le: {formatDate(currentBook.created_at)}
+            </p>
+            
+            <div className="message-book-meta">
+              <span className="message-book-condition">État: {currentBook.condition}</span>
+              <span className="message-book-location">
+                <FiMapPin /> {currentBook.location || 'Non spécifiée'}
+              </span>
+
+              <span className={`message-book-availability availability-${currentBook.availability?.toLowerCase()}`}>
+                {currentBook.availability || 'Non Spécifié'}
+              </span>
             </div>
             
-            <div className="message-book-image">
-              <img
-                src={currentBook.images?.[0] 
-                  ? `http://localhost:5001/uploads/${currentBook.images[0]}`
-                  : '/placeholder.jpg'
-                }
-                alt={currentBook.title}
-              />
+            <div className="message-book-description">
+              <p>{currentBook.description || 'Aucune description disponible.'}</p>
             </div>
             
-            <div className="message-book-details">
-              <h4>{currentBook.title}</h4>
-             
-              <p className="message-book-author">{currentBook.author || 'Auteur inconnu'}</p>
-              
-              <p className="message-book-category">Catégorie: {currentBook.category || 'Non spécifiée'}</p>
-
-              {/* Ajoutez cette ligne pour afficher la date de création */}
-              <p className="message-book-date" style={{ color: '#999', fontSize: '12px', marginBottom: '12px' }}>
-                Publié le: {formatDate(currentBook.created_at)}
-              </p>
-              
-              <div className="message-book-meta">
-                <span className="message-book-condition">État: {currentBook.condition}</span>
-                <span className="message-book-location">
-                  <FiMapPin /> {currentBook.location || 'Non spécifiée'}
-                </span>
-
-                <span className={`message-book-availability availability-${currentBook.availability?.toLowerCase()}`}>
-                  {currentBook.availability || 'Non Spécifié'}
-                </span>
-              </div>
-              
-              <div className="message-book-description">
-                <p>{currentBook.description || 'Aucune description disponible.'}</p>
-              </div>
-              
-              <div className="message-book-publisher">
-                <h4>Publié par :</h4>
-                <div className="publisher-content">
+            <div className="message-book-publisher">
+              <h4>Publié par :</h4>
+              <div className="publisher-content">
+                {currentBook?.avatar ? (
                   <img 
-                    src={currentBook?.avatar 
-                      ? `http://localhost:5001${currentBook.avatar}`
-                      : 'http://localhost:5001/default-avatar.png'
-                    }
+                    src={`http://localhost:5001${currentBook.avatar}`}
                     alt={`Avatar de ${currentBook?.user?.username || 'utilisateur'}`}
                     className="message-book-publisher-avatar"
                     onClick={() => handleProfileClick(currentBook?.user?.id)}
                     style={{ cursor: 'pointer' }}
                   />
-                  <p 
-                    className="publisher-name"
+                ) : (
+                  <div 
                     onClick={() => handleProfileClick(currentBook?.user?.id)}
                     style={{ cursor: 'pointer' }}
                   >
-                    {selectedConversation?.publisher_name || currentBook?.user?.username || 'Non spécifié'}
-                  </p>
-                </div>
+                    {getDefaultAvatar(currentBook?.user?.username)}
+                  </div>
+                )}
+                <p 
+                  className="publisher-name"
+                  onClick={() => handleProfileClick(currentBook?.user?.id)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  {selectedConversation?.publisher_name || currentBook?.user?.username || 'Non spécifié'}
+                </p>
               </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
     </div>
   );
 };

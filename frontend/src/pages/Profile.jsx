@@ -4,7 +4,7 @@ import axios from 'axios';
 import './Profile.css';
 import BookCard from '../components/BookCard';
 
-const Profile = ({ currentUser, isPublicProfile = false }) => {
+const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => {
   const [formData, setFormData] = useState({
     username: '',
     location: '',
@@ -58,7 +58,7 @@ const Profile = ({ currentUser, isPublicProfile = false }) => {
 
     const fetchUserBooks = async () => {
       try {
-        const targetUserId = isPublicProfile ? userId : currentUser.id;
+        const targetUserId = isPublicProfile ? userId : currentUser?.id;
         const response = await axios.get(`http://localhost:5001/api/books/user/${targetUserId}`, {
           withCredentials: true
         });
@@ -74,7 +74,12 @@ const Profile = ({ currentUser, isPublicProfile = false }) => {
     if (currentUser?.id || userId) {
       fetchUserBooks();
     }
-  }, [currentUser, userId, isPublicProfile]);
+
+    if (currentUser && isPublicProfile && userId && currentUser.id === parseInt(userId)) {
+    navigate('/profile');
+    }
+    
+  }, [currentUser, isPublicProfile, userId, navigate]);
 
   const getDefaultAvatar = (username) => {
     if (!username) return '';
@@ -337,7 +342,8 @@ const Profile = ({ currentUser, isPublicProfile = false }) => {
                   book={book} 
                   isAuthenticated={!!currentUser} 
                   currentUser={currentUser} 
-                  onRequireLogin={() => {}} 
+                  executeAfterAuth={executeAfterAuth}
+                  onRequireLogin={executeAfterAuth}
                   hideOwnerBadge={true}  
                 />
                 {!isPublicProfile && (
