@@ -157,17 +157,38 @@ router.get('/profile', authenticate, async (req, res) => {
 });
 
 router.put('/profile', authenticate, async (req, res) => {
-  const { username, location, bio } = req.body;
+  const { username, location, bio, currentPassword, newPassword } = req.body;
   
   if (!username) {
     return res.status(400).json({ error: "Username is required" });
   }
 
   try {
-    await pool.query(
-      'UPDATE users SET username = ?, location = ?, bio = ? WHERE id = ?',
-      [username, location, bio, req.userId]
-    );
+    if (newPassword) {
+      if (!currentPassword) {
+        return res.status(400).json({ error: "Current password is required" });
+      }
+
+      const [users] = await pool.query('SELECT password_hash FROM users WHERE id = ?', [req.userId]);
+      const isMatch = await bcrypt.compare(currentPassword, users[0].password_hash);
+      
+      if (!isMatch) {
+        return res.status(401).json({ error: "Current password is incorrect" });
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      
+      await pool.query(
+        'UPDATE users SET username = ?, location = ?, bio = ?, password_hash = ? WHERE id = ?',
+        [username, location, bio, hashedPassword, req.userId]
+      );
+    } else {
+      await pool.query(
+        'UPDATE users SET username = ?, location = ?, bio = ? WHERE id = ?',
+        [username, location, bio, req.userId]
+      );
+    }
+
     res.json({ message: "Profile updated successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });

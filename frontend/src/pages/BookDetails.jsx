@@ -155,7 +155,7 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
               avatar: book.user.avatar
             }
           },
-          replace: true // Ajoutez ceci pour éviter la duplication dans l'historique
+          replace: true
         });
       } catch (error) {
         console.error("Erreur lors de la création de la conversation:", error);
@@ -163,7 +163,6 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
       }
     });
   };
-
 
   if (loading) return <div className="book-details-loading">Chargement...</div>;
   if (!book) return <div className="book-details-error">Livre non trouvé</div>;
@@ -236,7 +235,7 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
                         <img 
                           src={`${API_URL}${book.avatar}`}
                           alt={`Avatar de ${book.username}`}
-                          className="header-default-avatar"
+                          className="header-default-avatar-icon"
                           onError={(e) => {
                             e.target.src = `${API_URL}/default-avatar.png`;
                             console.error("Erreur de chargement de l'avatar:", book.avatar);

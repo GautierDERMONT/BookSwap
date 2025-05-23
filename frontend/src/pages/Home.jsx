@@ -69,7 +69,7 @@ const HomePage = ({ isAuthenticated, currentUser, onOpenLogin }) => {
       <div className="home-container">
         <div className="cta-box">
           <div className="cta-text">
-            <span className="cta-main">C'est le moment de se cultiver !</span>
+            <span className="cta-main"> Bienvenue sur ZGM Book, c'est le moment de se cultiver !</span>
             <span className="cta-sub">Ajoutez un livre et partagez le savoir.</span>
           </div>
           <button className="add-book-button" onClick={handleAddBookClick}>

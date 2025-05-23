@@ -25,19 +25,18 @@ const Messages = ({ currentUser }) => {
     const color = colors[firstLetter.charCodeAt(0) % colors.length];
     
     return (
-      <div style={{
-        backgroundColor: color,
-        width: '35px',
-        height: '35px',
-        borderRadius: '50%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontSize: '1rem',
-        fontWeight: 'bold',
-        border: '1px solid #eee'
-      }}>
+        <div style={{
+          backgroundColor: color,
+          width: '32px',
+          height: '32px',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'white',
+          fontSize: '1rem',
+          fontWeight: 'bold'
+        }}>
         {firstLetter}
       </div>
     );

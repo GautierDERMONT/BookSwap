@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import './Profile.css';
 import BookCard from '../components/BookCard';
@@ -10,7 +10,10 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
     location: '',
     bio: '',
     avatar: null,
-    deleteAvatar: false
+    deleteAvatar: false,
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
   });
   const [tempAvatar, setTempAvatar] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -20,6 +23,19 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
   const [profileUser, setProfileUser] = useState(null);
   const navigate = useNavigate();
   const { userId } = useParams();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.scrollToBooks) {
+      setTimeout(() => {
+        const booksSection = document.getElementById('user-books-section');
+        if (booksSection) {
+          booksSection.scrollIntoView({ behavior: 'smooth' });
+        }
+        navigate(location.pathname, { replace: true, state: {} });
+      }, 100);
+    }
+  }, [location.state, navigate, location.pathname]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -34,7 +50,10 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
             location: response.data.location || '',
             bio: response.data.bio || '',
             avatar: null,
-            deleteAvatar: false
+            deleteAvatar: false,
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: ''
           });
           setTempAvatar(response.data.avatar ? `http://localhost:5001${response.data.avatar}` : '');
         } else {
@@ -46,7 +65,10 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
             location: response.data.location || '',
             bio: response.data.bio || '',
             avatar: null,
-            deleteAvatar: false
+            deleteAvatar: false,
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: ''
           });
           setTempAvatar(response.data.avatar ? `http://localhost:5001${response.data.avatar}` : '');
         }
@@ -76,9 +98,8 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
     }
 
     if (currentUser && isPublicProfile && userId && currentUser.id === parseInt(userId)) {
-    navigate('/profile');
+      navigate('/profile');
     }
-    
   }, [currentUser, isPublicProfile, userId, navigate]);
 
   const getDefaultAvatar = (username) => {
@@ -154,6 +175,14 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
       setIsLoading(true);
       setMessage({ text: '', type: '' });
 
+      if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
+        throw new Error('Les nouveaux mots de passe ne correspondent pas');
+      }
+
+      if (formData.newPassword && !formData.currentPassword) {
+        throw new Error('Le mot de passe actuel est requis pour changer le mot de passe');
+      }
+
       if (formData.deleteAvatar) {
         await axios.delete('http://localhost:5001/api/auth/avatar', {
           withCredentials: true
@@ -179,7 +208,9 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
         {
           username: formData.username,
           location: formData.location,
-          bio: formData.bio
+          bio: formData.bio,
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword
         },
         { 
           withCredentials: true,
@@ -194,7 +225,7 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
     } catch (error) {
       console.error('Error updating profile:', error);
       setMessage({ 
-        text: error.response?.data?.error || 'Erreur lors de la mise à jour du profil', 
+        text: error.response?.data?.error || error.message || 'Erreur lors de la mise à jour du profil', 
         type: 'error' 
       });
     } finally {
@@ -275,6 +306,39 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
                 onChange={handleChange}
               />
             </div>
+
+            <div className="profile-form-group">
+              <label>Mot de passe actuel</label>
+              <input
+                type="password"
+                name="currentPassword"
+                value={formData.currentPassword}
+                onChange={handleChange}
+                placeholder="Entrez votre mot de passe actuel"
+              />
+            </div>
+
+            <div className="profile-form-group">
+              <label>Nouveau mot de passe</label>
+              <input
+                type="password"
+                name="newPassword"
+                value={formData.newPassword}
+                onChange={handleChange}
+                placeholder="Entrez un nouveau mot de passe"
+              />
+            </div>
+
+            <div className="profile-form-group">
+              <label>Confirmer le nouveau mot de passe</label>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="Confirmez le nouveau mot de passe"
+              />
+            </div>
           </div>
 
           <div className="profile-form-bio">
@@ -329,7 +393,7 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
         </div>
       )}
 
-      <div className="user-books-section">
+      <div className="user-books-section" id="user-books-section">
         <h2>Livres {isPublicProfile ? 'de cet utilisateur' : 'postés'} ({userBooks.length})</h2>
         
         {loadingBooks ? (

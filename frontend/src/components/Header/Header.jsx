@@ -7,23 +7,12 @@ import logo from '../../assets/logo.png';
 
 const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLogout }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilters, setActiveFilters] = useState({
-    location: [],
-    condition: [],
-    genre: []
-  });
-  const [newFilter, setNewFilter] = useState({
-    type: 'location',
-    value: ''
-  });
   const [showDropdown, setShowDropdown] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [searchSuggestions, setSearchSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-
-  const conditionOptions = ['Neuf', 'Très bon état', 'Bon état', 'Usagé'];
 
   const getDefaultAvatar = (username) => {
     if (!username) return <User size={20} className="header-profile-icon" />;
@@ -51,26 +40,14 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
     );
   };
 
-  const addFilter = () => {
-    const trimmedValue = newFilter.value.trim();
-    if (!trimmedValue) return;
-
-    setActiveFilters((prev) => ({
-      ...prev,
-      [newFilter.type]: [trimmedValue]
-    }));
-    setNewFilter({ ...newFilter, value: '' });
-  };
-
-  const removeFilter = (type) => {
-    setActiveFilters({
-      ...activeFilters,
-      [type]: []
-    });
-  };
-
-  const handleFilterTypeChange = (type) => {
-    setNewFilter({ ...newFilter, type, value: '' });
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      navigate('/books');
+    }
+    setShowSuggestions(false);
   };
 
   const handleAddBookClick = () => {
@@ -88,7 +65,7 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
 
   const handleMessageClick = () => {
     if (isAuthenticated) {
-      navigate('/messages', { state: { fromHeader: true, redirectAfterLogin: '/messages' } });
+      navigate('/messages');
     } else {
       onOpenLogin();
       navigate('/', { state: { showLogin: true, redirectAfterLogin: '/messages' } });
@@ -98,35 +75,6 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
   const handleProfileClick = () => {
     isAuthenticated ? navigate('/profile') : onOpenLogin();
   };
-
-
-const handleSearch = (e) => {
-  e.preventDefault();
-  const queryParams = new URLSearchParams();
-
-  // Ajouter le terme de recherche seulement s'il n'est pas vide
-  if (searchQuery.trim()) {
-    queryParams.append('q', searchQuery.trim());
-  }
-
-  // Ajouter les filtres actifs
-  if (activeFilters.location.length > 0) {
-    queryParams.append('location', activeFilters.location[0]);
-  }
-  if (activeFilters.condition.length > 0) {
-    queryParams.append('condition', activeFilters.condition[0]);
-  }
-  if (activeFilters.genre.length > 0) {
-    queryParams.append('genre', activeFilters.genre[0]);
-  }
-
-  // Naviguer seulement s'il y a soit un terme de recherche, soit des filtres
-  if (searchQuery.trim() || Object.values(activeFilters).some(filters => filters.length > 0)) {
-    navigate(`/search?${queryParams.toString()}`);
-    setShowSuggestions(false);
-  }
-};
-
 
   const handleLogoutClick = () => {
     onLogout();
@@ -174,7 +122,7 @@ const handleSearch = (e) => {
           <div className="header-search-bar">
             <input
               type="text"
-              placeholder="Rechercher des livres..."
+              placeholder="Recherche rapide par titre ou auteur..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setShowSuggestions(true)}
@@ -203,75 +151,12 @@ const handleSearch = (e) => {
           </div>
         </form>
 
-        <div className="header-filters-container">
-          <div className="header-filter-input-container">
-            <select
-              value={newFilter.type}
-              onChange={(e) => handleFilterTypeChange(e.target.value)}
-              className="header-filter-type-select"
-            >
-              <option value="location">Localisation</option>
-              <option value="condition">État</option>
-              <option value="genre">Catégorie</option>
-            </select>
-            
-            {newFilter.type === 'condition' ? (
-              <select
-                value={newFilter.value}
-                onChange={(e) => setNewFilter({ ...newFilter, value: e.target.value })}
-                className="header-filter-value-select"
-              >
-                <option value="">Sélectionner un état</option>
-                {conditionOptions.map((option) => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
-            ) : (
-              <input
-                type="text"
-                placeholder={newFilter.type === 'location' 
-                  ? "Ajouter une localisation..." 
-                  : "Ajouter une catégorie..."}
-                value={newFilter.value}
-                onChange={(e) => setNewFilter({ ...newFilter, value: e.target.value })}
-                onKeyPress={(e) => e.key === 'Enter' && addFilter()}
-                className="header-filter-value-input"
-              />
-            )}
-            
-            <button 
-              onClick={addFilter} 
-              className="header-add-filter-button"
-              disabled={!newFilter.value}
-            >
-              <Plus size={16} />
-            </button>
-          </div>
-
-          {Object.values(activeFilters).some(filters => filters.length > 0) && (
-            <div className="header-active-filters-wrapper">
-              {Object.entries(activeFilters).map(([type, filters]) => (
-                filters.length > 0 && (
-                  <div key={type} className="header-filter-category">
-                    <span className="header-filter-category-label">
-                      {type === 'location' ? 'Localisation:' : 
-                       type === 'condition' ? 'État:' : 'Genre:'}
-                    </span>
-                    <div className="header-active-filter">
-                      {filters[0]}
-                      <button 
-                        onClick={() => removeFilter(type)} 
-                        className="header-remove-filter"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  </div>
-                )
-              ))}
-            </div>
-          )}
-        </div>
+        <button 
+          className="header-filter-button"
+          onClick={() => navigate('/books')}
+        >
+          Filtrer votre recherche
+        </button>
 
         <div className="header-user-actions">
           {!isAuthenticated ? (

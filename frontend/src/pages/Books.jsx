@@ -1,10 +1,10 @@
-// frontend/src/pages/Books.jsx
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import api from '../services/api';
 import BookCard from '../components/BookCard';
+import { Search } from 'react-feather';
 import './Books.css';
 
-export default function Books() {
+export default function Books({ isAuthenticated, currentUser, onOpenLogin }) {
   const [books, setBooks] = useState([]);
   const [filteredBooks, setFilteredBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,16 +12,17 @@ export default function Books() {
   const [filters, setFilters] = useState({
     categories: [],
     conditions: [],
-    locations: [],
-    searchQuery: ''
+    locations: []
   });
   const [categories, setCategories] = useState([]);
   const [conditions, setConditions] = useState([]);
   const [locations, setLocations] = useState([]);
-  const [searchSuggestions, setSearchSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const [sortOption, setSortOption] = useState('newest');
-  const searchRef = useRef(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categorySearch, setCategorySearch] = useState('');
+  const [conditionSearch, setConditionSearch] = useState('');
+  const [locationSearch, setLocationSearch] = useState('');
+  const [searchTimeout, setSearchTimeout] = useState(null);
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -29,9 +30,7 @@ export default function Books() {
         const res = await api.get('/books');
         const booksData = res.data.books;
         setBooks(booksData);
-        setFilteredBooks(booksData);
         
-        // Extraire les options uniques pour les filtres
         const uniqueCategories = [...new Set(booksData.map(book => book.category))];
         const uniqueConditions = [...new Set(booksData.map(book => book.condition))];
         const uniqueLocations = [...new Set(booksData.map(book => book.location))];
@@ -39,7 +38,6 @@ export default function Books() {
         setCategories(uniqueCategories);
         setConditions(uniqueConditions);
         setLocations(uniqueLocations);
-        
         setLoading(false);
       } catch (err) {
         console.error(err);
@@ -47,135 +45,76 @@ export default function Books() {
         setLoading(false);
       }
     };
+
     fetchBooks();
   }, []);
 
   useEffect(() => {
-    // Gérer les clics en dehors des suggestions
-    const handleClickOutside = (event) => {
-      if (searchRef.current && !searchRef.current.contains(event.target)) {
-        setShowSuggestions(false);
+    if (searchTimeout) clearTimeout(searchTimeout);
+
+    const timeout = setTimeout(() => {
+      let result = [...books];
+      
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        result = result.filter(book => 
+          book.title.toLowerCase().includes(query) || 
+          book.author.toLowerCase().includes(query)
+        );
       }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+      
+      if (filters.categories.length > 0) {
+        result = result.filter(book => filters.categories.includes(book.category));
+      }
+      
+      if (filters.conditions.length > 0) {
+        result = result.filter(book => filters.conditions.includes(book.condition));
+      }
+      
+      if (filters.locations.length > 0) {
+        result = result.filter(book => 
+          filters.locations.some(location => book.location.includes(location))
+        );
+      }
 
-  useEffect(() => {
-    // Générer des suggestions de recherche
-    if (filters.searchQuery.length > 1) {
-      const query = filters.searchQuery.toLowerCase();
-      const suggestions = [
-        ...new Set([
-          ...books.filter(book => 
-            book.title.toLowerCase().includes(query)
-          ).map(book => book.title),
-          ...books.filter(book => 
-            book.author.toLowerCase().includes(query)
-          ).map(book => book.author)
-        ])
-      ].slice(0, 5);
-      setSearchSuggestions(suggestions);
-    } else {
-      setSearchSuggestions([]);
-    }
-  }, [filters.searchQuery, books]);
+      result = sortBooks(result, sortOption);
+      setFilteredBooks(result);
+    }, 300);
 
-  useEffect(() => {
-    // Appliquer les filtres et le tri
-    let result = [...books];
-    
-    if (filters.categories.length > 0) {
-      result = result.filter(book => filters.categories.includes(book.category));
-    }
-    
-    if (filters.conditions.length > 0) {
-      result = result.filter(book => filters.conditions.includes(book.condition));
-    }
-    
-    if (filters.locations.length > 0) {
-      result = result.filter(book => 
-        filters.locations.some(location => book.location.includes(location))
-      );
-    }
-    
-    if (filters.searchQuery) {
-      const query = filters.searchQuery.toLowerCase();
-      result = result.filter(book => 
-        book.title.toLowerCase().includes(query) || 
-        book.author.toLowerCase().includes(query)
-      );
-    }
+    setSearchTimeout(timeout);
 
-    // Appliquer le tri
-    result = sortBooks(result, sortOption);
-    
-    setFilteredBooks(result);
-  }, [filters, books, sortOption]);
+    return () => clearTimeout(timeout);
+  }, [searchQuery, filters, books, sortOption]);
 
   const sortBooks = (booksToSort, option) => {
     const sorted = [...booksToSort];
     switch(option) {
-      case 'newest':
-        return sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      case 'oldest':
-        return sorted.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-      case 'title-asc':
-        return sorted.sort((a, b) => a.title.localeCompare(b.title));
-      case 'title-desc':
-        return sorted.sort((a, b) => b.title.localeCompare(a.title));
-      case 'author-asc':
-        return sorted.sort((a, b) => a.author.localeCompare(b.author));
-      case 'author-desc':
-        return sorted.sort((a, b) => b.author.localeCompare(a.author));
-      default:
-        return sorted;
+      case 'newest': return sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      case 'oldest': return sorted.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      case 'title-asc': return sorted.sort((a, b) => a.title.localeCompare(b.title));
+      case 'title-desc': return sorted.sort((a, b) => b.title.localeCompare(a.title));
+      case 'author-asc': return sorted.sort((a, b) => a.author.localeCompare(b.author));
+      case 'author-desc': return sorted.sort((a, b) => b.author.localeCompare(a.author));
+      default: return sorted;
     }
   };
 
   const handleFilterChange = (filterName, value, isChecked) => {
-    setFilters(prev => {
-      const currentFilters = [...prev[filterName]];
-      if (isChecked) {
-        return {
-          ...prev,
-          [filterName]: [...currentFilters, value]
-        };
-      } else {
-        return {
-          ...prev,
-          [filterName]: currentFilters.filter(item => item !== value)
-        };
-      }
-    });
-  };
-
-  const handleSearchChange = (e) => {
     setFilters(prev => ({
       ...prev,
-      searchQuery: e.target.value
+      [filterName]: isChecked 
+        ? [...prev[filterName], value] 
+        : prev[filterName].filter(item => item !== value)
     }));
-    setShowSuggestions(true);
-  };
-
-  const selectSuggestion = (suggestion) => {
-    setFilters(prev => ({
-      ...prev,
-      searchQuery: suggestion
-    }));
-    setShowSuggestions(false);
   };
 
   const resetFilters = () => {
-    setFilters({
-      categories: [],
-      conditions: [],
-      locations: [],
-      searchQuery: ''
-    });
+    setFilters({ categories: [], conditions: [], locations: [] });
     setSortOption('newest');
+    setSearchQuery('');
+    setCategorySearch('');
+    setConditionSearch('');
+    setLocationSearch('');
   };
 
   if (loading) return <p>Chargement...</p>;
@@ -183,84 +122,103 @@ export default function Books() {
 
   return (
     <div className="books-page">
-      <div className="filters-container">
-        <div className="search-filter" ref={searchRef}>
+      <div className="books-search-container">
+        <div className="books-search-bar">
           <input
             type="text"
             placeholder="Rechercher par titre ou auteur..."
-            value={filters.searchQuery}
-            onChange={handleSearchChange}
-            onFocus={() => setShowSuggestions(true)}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
-          {showSuggestions && searchSuggestions.length > 0 && (
-            <div className="search-suggestions">
-              {searchSuggestions.map((suggestion, index) => (
-                <div 
-                  key={index} 
-                  className="suggestion-item"
-                  onClick={() => selectSuggestion(suggestion)}
-                >
-                  {suggestion}
-                </div>
-              ))}
+          <Search size={18} className="books-search-icon" />
+        </div>
+      </div>
+
+      <div className="filters-container">
+        <div className="filter-group">
+          <div className="filter-header">
+            <label>Catégories</label>
+            <input
+              type="text"
+              placeholder="Rechercher..."
+              value={categorySearch}
+              onChange={(e) => setCategorySearch(e.target.value)}
+              className="filter-search"
+            />
+          </div>
+            <div className="scrollable-checkbox-group">
+              {categories
+                .filter(cat => cat.toLowerCase().includes(categorySearch.toLowerCase()))
+                .map(category => (
+                  <label key={category} className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={filters.categories.includes(category)}
+                      onChange={(e) => handleFilterChange('categories', category, e.target.checked)}
+                    />
+                    <span className="checkbox-text">{category}</span>
+                  </label>
+                ))}
             </div>
-          )}
         </div>
         
         <div className="filter-group">
-          <label>Catégories</label>
-          <div className="checkbox-group">
-            {categories.map(category => (
-              <label key={category} className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={filters.categories.includes(category)}
-                  onChange={(e) => handleFilterChange('categories', category, e.target.checked)}
-                />
-                {category}
-              </label>
-            ))}
+          <div className="filter-header">
+            <label>États</label>
+            <input
+              type="text"
+              placeholder="Rechercher..."
+              value={conditionSearch}
+              onChange={(e) => setConditionSearch(e.target.value)}
+              className="filter-search"
+            />
+          </div>
+          <div className="scrollable-checkbox-group">
+            {conditions
+              .filter(cond => cond.toLowerCase().includes(conditionSearch.toLowerCase()))
+              .map(condition => (
+                <label key={condition} className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={filters.conditions.includes(condition)}
+                    onChange={(e) => handleFilterChange('conditions', condition, e.target.checked)}
+                  />
+                  {condition}
+                </label>
+              ))}
           </div>
         </div>
         
         <div className="filter-group">
-          <label>États</label>
-          <div className="checkbox-group">
-            {conditions.map(condition => (
-              <label key={condition} className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={filters.conditions.includes(condition)}
-                  onChange={(e) => handleFilterChange('conditions', condition, e.target.checked)}
-                />
-                {condition}
-              </label>
-            ))}
+          <div className="filter-header">
+            <label>Localisations</label>
+            <input
+              type="text"
+              placeholder="Rechercher..."
+              value={locationSearch}
+              onChange={(e) => setLocationSearch(e.target.value)}
+              className="filter-search"
+            />
           </div>
-        </div>
-        
-        <div className="filter-group">
-          <label>Localisations</label>
-          <div className="checkbox-group">
-            {locations.map(location => (
-              <label key={location} className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={filters.locations.includes(location)}
-                  onChange={(e) => handleFilterChange('locations', location, e.target.checked)}
-                />
-                {location}
-              </label>
-            ))}
+          <div className="scrollable-checkbox-group">
+            {locations
+              .filter(loc => loc.toLowerCase().includes(locationSearch.toLowerCase()))
+              .map(location => (
+                <label key={location} className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={filters.locations.includes(location)}
+                    onChange={(e) => handleFilterChange('locations', location, e.target.checked)}
+                  />
+                  {location}
+                </label>
+              ))}
           </div>
         </div>
         
         <div className="filter-group">
           <label>Trier par</label>
-          <select
-            value={sortOption}
-            onChange={(e) => setSortOption(e.target.value)}
-          >
+          <select value={sortOption} onChange={(e) => setSortOption(e.target.value)}>
             <option value="newest">Plus récent</option>
             <option value="oldest">Plus ancien</option>
             <option value="title-asc">Titre (A-Z)</option>
@@ -276,13 +234,22 @@ export default function Books() {
       </div>
 
       <div className="results-info">
+        {searchQuery && (
+          <p>Résultats pour : "{searchQuery}"</p>
+        )}
         <p>{filteredBooks.length} livre(s) trouvé(s)</p>
       </div>
 
       <div className="book-list">
         {filteredBooks.length > 0 ? (
           filteredBooks.map((book) => (
-            <BookCard key={book.id} book={book} />
+            <BookCard 
+              key={book.id} 
+              book={book}
+              isAuthenticated={isAuthenticated}
+              currentUser={currentUser}
+              onRequireLogin={onOpenLogin}
+            />
           ))
         ) : (
           <p className="no-results">Aucun livre ne correspond aux critères de recherche</p>

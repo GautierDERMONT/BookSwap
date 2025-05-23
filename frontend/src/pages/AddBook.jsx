@@ -23,7 +23,6 @@ const AddBook = () => {
     availability: 'Disponible'
   });
 
-  // Récupérer la localisation du profil
   useEffect(() => {
     const fetchUserLocation = async () => {
       try {
@@ -48,7 +47,6 @@ const AddBook = () => {
     return text.trim().split(/\s+/).filter(Boolean).length;
   };
 
-  // Gestion des images
   const handleDragEnter = (e) => {
     e.preventDefault();
     setIsDragging(true);
@@ -76,7 +74,7 @@ const AddBook = () => {
   };
 
   const handleFiles = (files) => {
-    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
     const MAX_FILES = 3;
 
     const validFiles = files
@@ -118,7 +116,6 @@ const AddBook = () => {
     setIsSubmitting(true);
     setError(null);
   
-    // Validation des champs obligatoires
     const requiredFields = ['title', 'author', 'category', 'condition', 'location', 'description'];
     const missingFields = requiredFields.filter(field => !formData[field] || formData[field].trim().length === 0);
   
@@ -128,7 +125,6 @@ const AddBook = () => {
       return;
     }
   
-    // Validation des images
     if (images.length === 0) {
       setError('Veuillez ajouter au moins une image');
       setIsSubmitting(false);
@@ -145,7 +141,6 @@ const AddBook = () => {
       formDataToSend.append('description', formData.description.trim());
       formDataToSend.append('availability', formData.availability);
 
-      // Ajouter les images
       images.forEach((image) => {
         formDataToSend.append('images', image);
       });
@@ -157,7 +152,7 @@ const AddBook = () => {
         withCredentials: true
       });
 
-      navigate('/profile');
+      navigate('/profile', { state: { scrollToBooks: true } });
     } catch (err) {
       console.error('Erreur lors de l\'ajout du livre:', err);
       setError(err.response?.data?.error || 'Erreur lors de l\'ajout du livre');
