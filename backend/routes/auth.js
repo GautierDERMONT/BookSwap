@@ -277,4 +277,66 @@ router.get('/profile/:userId', async (req, res) => {
   }
 });
 
+// Ajoutez cette route dans auth.js juste avant module.exports = router;
+router.delete('/account', authenticate, async (req, res) => {
+  try {
+    // Commencer une transaction
+    await pool.query('START TRANSACTION');
+
+    // 1. Supprimer les images des livres de l'utilisateur
+    const [userBooks] = await pool.query('SELECT id FROM book WHERE users_id = ?', [req.userId]);
+    const bookIds = userBooks.map(book => book.id);
+
+    if (bookIds.length > 0) {
+      const [bookImages] = await pool.query('SELECT image_path FROM book_images WHERE book_id IN (?)', [bookIds]);
+      
+      // Supprimer les fichiers physiques
+      bookImages.forEach(image => {
+        const imagePath = path.join(__dirname, '../uploads', path.basename(image.image_path));
+        if (fs.existsSync(imagePath)) {
+          fs.unlinkSync(imagePath);
+        }
+      });
+
+      // Supprimer les entrées dans book_images
+      await pool.query('DELETE FROM book_images WHERE book_id IN (?)', [bookIds]);
+    }
+
+    // 2. Supprimer les messages de l'utilisateur
+    await pool.query('DELETE FROM messages WHERE sender_id = ?', [req.userId]);
+
+    // 3. Supprimer les conversations de l'utilisateur
+    await pool.query('DELETE FROM conversations WHERE user1_id = ? OR user2_id = ?', [req.userId, req.userId]);
+
+    // 4. Supprimer les favoris de l'utilisateur
+    await pool.query('DELETE FROM favorites WHERE user_id = ?', [req.userId]);
+
+    // 5. Supprimer les livres de l'utilisateur
+    await pool.query('DELETE FROM book WHERE users_id = ?', [req.userId]);
+
+    // 6. Supprimer l'avatar de l'utilisateur s'il existe
+    const [user] = await pool.query('SELECT avatar FROM users WHERE id = ?', [req.userId]);
+    if (user[0].avatar) {
+      const avatarPath = path.join(__dirname, '../uploads', path.basename(user[0].avatar));
+      if (fs.existsSync(avatarPath)) {
+        fs.unlinkSync(avatarPath);
+      }
+    }
+
+    // 7. Finalement, supprimer l'utilisateur
+    await pool.query('DELETE FROM users WHERE id = ?', [req.userId]);
+
+    // Valider la transaction
+    await pool.query('COMMIT');
+
+    // Déconnecter l'utilisateur
+    res.clearCookie('token').json({ message: "Compte supprimé avec succès" });
+  } catch (err) {
+    // Annuler la transaction en cas d'erreur
+    await pool.query('ROLLBACK');
+    console.error('Error deleting account:', err);
+    res.status(500).json({ error: "Erreur lors de la suppression du compte" });
+  }
+});
+
 module.exports = router;

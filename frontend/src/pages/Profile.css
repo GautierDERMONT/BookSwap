@@ -245,6 +245,29 @@
     transition: background 0.3s;
 }
 
+.profile-delete-account-button {
+  padding: 0.75rem;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s;
+  margin-top: 1rem;
+  width: 100%;
+  max-width: 200px;
+}
+
+.profile-delete-account-button:hover {
+  background: #c82333;
+}
+
+.profile-delete-account-button:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
 .add-book-button:hover {
     background: #3a5a8a;
 }

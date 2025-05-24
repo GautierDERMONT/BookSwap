@@ -2,6 +2,30 @@ const express = require('express');
 const router = express.Router();
 const authenticate = require('../middleware/authenticate');
 const { pool } = require('../config/db');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, '../uploads/messages'));
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.match('image.*')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Seules les images sont autorisées'), false);
+    }
+  }
+});
 
 router.get('/conversations', authenticate, async (req, res) => {
   try {
@@ -121,7 +145,6 @@ router.post('/conversations', authenticate, async (req, res) => {
   }
 });
 
-// Ajoutez cette route dans messages.js
 router.post('/conversations/:conversationId/mark-as-read', authenticate, async (req, res) => {
   try {
     const { conversationId } = req.params;
@@ -162,6 +185,7 @@ router.get('/conversations/:conversationId/messages', authenticate, async (req, 
         u.username as sender_name,
         u.avatar as sender_avatar,
         m.content,
+        m.image_url,
         m.created_at,
         m.is_read
       FROM messages m
@@ -216,6 +240,52 @@ router.post('/conversations/:conversationId/messages', authenticate, async (req,
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
+
+router.post('/conversations/:conversationId/messages/image', 
+  authenticate, 
+  upload.single('image'), 
+  async (req, res) => {
+    try {
+      const { conversationId } = req.params;
+      const userId = req.userId;
+      const imagePath = req.file ? `/uploads/messages/${req.file.filename}` : null;
+
+      const [convCheck] = await pool.query(
+        `SELECT id FROM conversations 
+         WHERE id = ? AND (user1_id = ? OR user2_id = ?)`,
+        [conversationId, userId, userId]
+      );
+
+      if (convCheck.length === 0) {
+        if (req.file) {
+          fs.unlinkSync(req.file.path);
+        }
+        return res.status(403).json({ error: "Accès non autorisé" });
+      }
+
+      const [result] = await pool.query(
+        `INSERT INTO messages (conversation_id, sender_id, content, image_url)
+         VALUES (?, ?, ?, ?)`,
+        [conversationId, userId, '', imagePath]
+      );
+
+      res.status(201).json({
+        messageId: result.insertId,
+        imageUrl: imagePath
+      });
+
+    } catch (err) {
+      console.error('Error sending image message:', err);
+      if (req.file) {
+        fs.unlinkSync(req.file.path);
+      }
+      res.status(500).json({ 
+        error: "Erreur serveur",
+        details: err.message
+      });
+    }
+  }
+);
 
 router.get('/unread-count', authenticate, async (req, res) => {
   try {

@@ -233,6 +233,30 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible et supprimera tous vos livres, messages et données.')) {
+      try {
+        setIsLoading(true);
+        await axios.delete('http://localhost:5001/api/auth/account', {
+          withCredentials: true
+        });
+        setMessage({ text: 'Compte supprimé avec succès', type: 'success' });
+        setTimeout(() => {
+          navigate('/');
+          window.location.reload();
+        }, 1500);
+      } catch (error) {
+        console.error('Error deleting account:', error);
+        setMessage({ 
+          text: error.response?.data?.error || 'Erreur lors de la suppression du compte', 
+          type: 'error' 
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
   return (
     <div className="profile-page">
       <h1>{isPublicProfile ? `Profil de ${formData.username}` : 'Mon Profil'}</h1>
@@ -360,6 +384,15 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
 
             <button type="submit" disabled={isLoading} className="profile-submit-button">
               {isLoading ? 'Enregistrement...' : 'Enregistrer les modifications'}
+            </button>
+
+            <button 
+              type="button" 
+              onClick={handleDeleteAccount} 
+              disabled={isLoading} 
+              className="profile-delete-account-button"
+            >
+              {isLoading ? 'Suppression en cours...' : 'Supprimer mon compte'}
             </button>
           </div>
         </form>

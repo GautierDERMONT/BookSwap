@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import api from '../services/api';
 import './Messages.css';
-import { FiMessageSquare, FiChevronRight, FiClock, FiCheck, FiMapPin } from 'react-icons/fi';
+import { FiMessageSquare, FiChevronRight, FiClock, FiCheck, FiMapPin, FiImage } from 'react-icons/fi';
 
 const Messages = ({ currentUser }) => {
   const [conversations, setConversations] = useState([]);
@@ -12,6 +12,8 @@ const Messages = ({ currentUser }) => {
   const [loading, setLoading] = useState(true);
   const [currentBook, setCurrentBook] = useState(null);
   const [interlocutor, setInterlocutor] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -25,18 +27,18 @@ const Messages = ({ currentUser }) => {
     const color = colors[firstLetter.charCodeAt(0) % colors.length];
     
     return (
-        <div style={{
-          backgroundColor: color,
-          width: '32px',
-          height: '32px',
-          borderRadius: '50%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white',
-          fontSize: '1rem',
-          fontWeight: 'bold'
-        }}>
+      <div style={{
+        backgroundColor: color,
+        width: '32px',
+        height: '32px',
+        borderRadius: '50%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'white',
+        fontSize: '1rem',
+        fontWeight: 'bold'
+      }}>
         {firstLetter}
       </div>
     );
@@ -240,6 +242,54 @@ const Messages = ({ currentUser }) => {
     }
   };
 
+  const handleImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.match('image.*')) {
+      alert('Seules les images sont autorisées');
+      return;
+    }
+
+    setSelectedImage(file);
+    
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSendImage = async () => {
+    if (!selectedImage || !selectedConversation) return;
+
+    try {
+      const formData = new FormData();
+      formData.append('image', selectedImage);
+      formData.append('conversationId', selectedConversation.id);
+
+      const response = await api.post(`/conversations/${selectedConversation.id}/messages/image`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      const messagesRes = await api.get(`/conversations/${selectedConversation.id}/messages`);
+      setMessages(messagesRes.data.messages || []);
+      setSelectedImage(null);
+      setImagePreview(null);
+      scrollToBottom();
+    } catch (error) {
+      console.error('Error sending image:', error);
+      alert("Erreur lors de l'envoi de l'image");
+    }
+  };
+
+  const handleCancelImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleString('fr-FR', {
@@ -295,14 +345,22 @@ const Messages = ({ currentUser }) => {
                     style={{ cursor: 'pointer' }}
                   />
                 ) : (
-                  <div className="message-conv-avatar" style={{ 
-                    backgroundColor: '#FF5733', 
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'white',
-                    fontWeight: 'bold'
-                  }}>
+                  <div 
+                    className="message-conv-avatar" 
+                    style={{ 
+                      backgroundColor: '#FF5733', 
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontWeight: 'bold',
+                      cursor: 'pointer'
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleProfileClick(conv.interlocutor_id);
+                    }}
+                  >
                     {conv.interlocutor_name?.charAt(0).toUpperCase() || 'U'}
                   </div>
                 )}
@@ -357,24 +415,43 @@ const Messages = ({ currentUser }) => {
                           src={`http://localhost:5001${msg.sender_avatar}`}
                           alt={`Avatar de ${msg.sender_name}`}
                           className="message-sender-avatar"
-                          onClick={() => handleProfileClick(msg.sender_id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleProfileClick(msg.sender_id);
+                          }}
                           style={{ cursor: 'pointer' }}
                         />
                       ) : (
-                        <div className="message-sender-avatar" style={{ 
-                          backgroundColor: '#FF5733', 
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: 'white',
-                          fontWeight: 'bold'
-                        }}>
+                        <div 
+                          className="message-sender-avatar" 
+                          style={{ 
+                            backgroundColor: '#FF5733', 
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            fontWeight: 'bold',
+                            cursor: 'pointer'
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleProfileClick(msg.sender_id);
+                          }}
+                        >
                           {msg.sender_name?.charAt(0).toUpperCase() || 'U'}
                         </div>
                       ))}
                       <div className={`message-bubble ${msg.sender_id === currentUser.id ? 'sent' : 'received'}`}>
                         <div className="message-content">
-                          <p>{msg.content}</p>
+                          {msg.image_url ? (
+                            <img 
+                              src={`http://localhost:5001${msg.image_url}`} 
+                              alt="Image envoyée" 
+                              className="message-image"
+                            />
+                          ) : (
+                            <p>{msg.content}</p>
+                          )}
                           <div className="message-meta">
                             <span>{formatDate(msg.created_at)}</span>
                             {msg.sender_id === currentUser.id && (
@@ -390,6 +467,16 @@ const Messages = ({ currentUser }) => {
             </div>
             
             <div className="message-input-container">
+              <label htmlFor="image-upload" className="image-upload-label">
+                <FiImage size={20} />
+                <input
+                  id="image-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  style={{ display: 'none' }}
+                />
+              </label>
               <input
                 type="text"
                 value={newMessage}
@@ -399,6 +486,23 @@ const Messages = ({ currentUser }) => {
               />
               <button onClick={handleSendMessage}>Envoyer</button>
             </div>
+
+            {imagePreview && (
+              <div className="image-preview-container">
+                <div className="image-preview-wrapper">
+                  <img src={imagePreview} alt="Preview" className="image-preview" />
+                  <button className="cancel-image-btn" onClick={handleCancelImage}>
+                    &times;
+                  </button>
+                </div>
+                <button 
+                  className="send-image-btn"
+                  onClick={handleSendImage}
+                >
+                  Envoyer l'image
+                </button>
+              </div>
+            )}
           </>
         ) : (
           <div className="message-empty-state">
@@ -431,7 +535,7 @@ const Messages = ({ currentUser }) => {
             
             <p className="message-book-category">Catégorie: {currentBook.category || 'Non spécifiée'}</p>
 
-            <p className="message-book-date" style={{ color: '#999', fontSize: '12px', marginBottom: '12px' }}>
+            <p className="message-book-date">
               Publié le: {formatDate(currentBook.created_at)}
             </p>
             

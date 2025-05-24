@@ -373,6 +373,104 @@
   text-align: center;
 }
 
+/* Ajoutez ces styles */
+.image-upload-label {
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  color: #666;
+  transition: color 0.2s;
+}
+
+.image-upload-label:hover {
+  color: #09b1ba;
+}
+
+.message-image {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+
+.image-preview-container {
+  position: absolute;
+  bottom: 40px; /* juste au-dessus du champ d'écriture */
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  padding: 6px;
+  border: 1px solid #eaeaea;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  max-width: 250px;
+}
+
+
+
+.image-preview-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+
+
+.image-preview-wrapper {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+
+.image-preview {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  display: block;
+}
+
+
+
+.cancel-image-btn {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: #ff4d4f;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+}
+
+.send-image-btn {
+  background-color: #09b1ba;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: block;
+  margin: 0 auto;
+}
+
+.send-image-btn:hover {
+  background-color: #079aa2;
+}
+
 .message-empty-state h3 {
   margin: 15px 0 5px;
   font-size: 16px;
