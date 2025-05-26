@@ -1,7 +1,9 @@
 const pool = require('../config/db');
 
+// Objet Message regroupant les méthodes pour gérer les conversations et messages
 const Message = {
-  // Créer une nouvelle conversation
+
+  // Crée une nouvelle conversation entre deux utilisateurs autour d'un livre
   createConversation: async (user1Id, user2Id, bookId) => {
     const [result] = await pool.query(
       `INSERT INTO conversations (user1_id, user2_id, book_id) 
@@ -11,7 +13,7 @@ const Message = {
     return result.insertId;
   },
 
-  // Vérifier si une conversation existe déjà
+  // Vérifie si une conversation existe déjà entre deux utilisateurs pour un livre donné
   findConversation: async (user1Id, user2Id, bookId) => {
     const [rows] = await pool.query(
       `SELECT id FROM conversations 
@@ -22,7 +24,7 @@ const Message = {
     return rows[0]?.id;
   },
 
-  // Envoyer un message
+  // Envoie un message dans une conversation donnée, avec option d'image jointe
   createMessage: async (conversationId, senderId, content, imageUrl = null) => {
     const [result] = await pool.query(
       `INSERT INTO messages (conversation_id, sender_id, content, image_url)
@@ -32,9 +34,8 @@ const Message = {
     return result.insertId;
   },
 
-  // Récupérer les conversations d'un utilisateur
+  // Récupère la liste des conversations d'un utilisateur avec les infos sur l'interlocuteur et dernier message
   getUserConversations: async (userId) => {
-  // Modifiez la requête dans /conversations
     const [conversations] = await pool.query(
       `SELECT 
         c.id, 
@@ -62,10 +63,10 @@ const Message = {
     return conversations;
   },
 
-  // Récupérer les messages d'une conversation
+  // Récupère tous les messages d'une conversation et marque ceux reçus comme lus
   getConversationMessages: async (conversationId, userId) => {
     const [messages] = await pool.query(
-    `SELECT 
+      `SELECT 
         m.*, 
         u.username as sender_name,
         u.avatar as sender_avatar
@@ -76,7 +77,7 @@ const Message = {
       [conversationId]
     );
 
-    // Marquer les messages comme lus
+    // Marquage des messages non lus envoyés par l'autre utilisateur comme lus
     await pool.query(
       `UPDATE messages SET is_read = TRUE 
        WHERE conversation_id = ? AND sender_id != ?`,

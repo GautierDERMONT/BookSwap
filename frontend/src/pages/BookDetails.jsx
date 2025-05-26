@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import api from '../services/api';
 import './BookDetails.css';
+import { FiMapPin } from 'react-icons/fi';
 
 const API_URL = 'http://localhost:5001';
 
@@ -105,9 +106,9 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
 
   const handleModalClick = (e) => {
     if (
-      e.target.classList.contains('nav-arrow') ||
-      e.target.closest('.nav-arrow') ||
-      e.target.classList.contains('zoomed-image')
+      e.target.classList.contains('book-details-nav-arrow') ||
+      e.target.closest('.book-details-nav-arrow') ||
+      e.target.classList.contains('book-details-zoomed-image')
     )
       return;
     closeZoom();
@@ -184,7 +185,7 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
                   onError={(e) => (e.target.src = `${API_URL}/placeholder.jpg`)}
                 />
               ) : (
-                <div className="empty-image">Pas d'image disponible</div>
+                <div className="book-details-empty-image">Pas d'image disponible</div>
               )}
             </div>
             {[1, 2].map((index) => (
@@ -198,13 +199,13 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
                     onError={(e) => (e.target.src = `${API_URL}/placeholder-thumbnail.jpg`)}
                   />
                 ) : (
-                  <div className="empty-image">pas d'autre image</div>
+                  <div className="book-details-empty-image">pas d'autre image</div>
                 )}
               </div>
             ))}
           </div>
           <button
-            className="favorite-button"
+            className="book-details-favorite-button"
             onClick={handleFavoriteClick}
             aria-label="Ajouter aux favoris"
           >
@@ -219,11 +220,11 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
           <h1>{book.title}</h1>
           <h2>{book.author || 'Auteur inconnu'}</h2>
             <div className="book-details-meta">
-              <p className="publisher-info">
+              <p className="book-details-publisher-info">
                 <strong>Proposé par :</strong>
                   <Link 
                       to={`/user/${book.user.id}`} 
-                      className="publisher-link"
+                      className="book-details-publisher-link"
                       onClick={(e) => {
                         if (currentUser && (currentUser.id === book.user.id || currentUser.userId === book.user.id)) {
                           e.preventDefault();
@@ -235,14 +236,14 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
                         <img 
                           src={`${API_URL}${book.avatar}`}
                           alt={`Avatar de ${book.username}`}
-                          className="header-default-avatar-icon"
+                          className="book-details-avatar-icon"
                           onError={(e) => {
                             e.target.src = `${API_URL}/default-avatar.png`;
                             console.error("Erreur de chargement de l'avatar:", book.avatar);
                           }}
                         />
                       ) : (
-                        <div className="default-avatar">
+                        <div className="book-details-default-avatar">
                           {book.username?.charAt(0).toUpperCase() || 'A'}
                         </div>
                       )}
@@ -250,12 +251,20 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
                     </Link>
               </p>
               <p><strong>Catégorie :</strong> {book.category || 'Non spécifié'}</p>
-              <p><strong>État :</strong> {book.condition || 'Non spécifié'}</p>
-              <p><strong>Localisation :</strong> {book.location || 'Non spécifié'}</p>
-              <p><strong>Disponibilité :</strong> 
-                <span className={`availability-${book.availability?.toLowerCase()}`}>
-                    {book.availability || 'Non spécifié'}
-                </span>
+
+                  <p> <strong>État :</strong> 
+                    <span className="book-details-condition">
+                      {book.condition || 'Non spécifié'}
+                  </span></p>
+
+              <p>  <strong>Localisation :</strong> 
+                  <span className="book-details-location">
+                    <FiMapPin /> {book.location || 'Non spécifié'}
+                  </span></p>
+              <p> <strong>Disponibilité :</strong> 
+                    <span className={`book-details-availability-${book.availability?.toLowerCase()}`}>
+                      {book.availability || 'Non spécifié'}
+                    </span>
               </p>
             </div>
           <div className="book-details-description">
@@ -263,18 +272,18 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
             <p>{book.description || 'Aucune description disponible.'}</p>
           </div>
           
-          <div className="book-actions">
+          <div className="book-details-actions">
             {isOwner ? (
               <>
-                <button className="edit-button" onClick={handleEditClick}>
+                <button className="book-details-edit-button" onClick={handleEditClick}>
                   Modifier le livre
                 </button>
-                <button className="delete-button" onClick={handleDeleteClick}>
+                <button className="book-details-delete-button" onClick={handleDeleteClick}>
                   Supprimer
                 </button>
               </>
             ) : (
-              <button className="message-button" onClick={handleMessageClick}>
+              <button className="book-details-message-button" onClick={handleMessageClick}>
                 Envoyer un message
               </button>
             )}
@@ -282,11 +291,11 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
         </div>
 
         {zoomedImageIndex !== null && (
-          <div className="zoomed-image-modal" onClick={handleModalClick}>
-            <div className="zoomed-image-container">
-              <div className="image-navigation">
+          <div className="book-details-zoomed-modal" onClick={handleModalClick}>
+            <div className="book-details-zoomed-container">
+              <div className="book-details-image-navigation">
                 <button
-                  className="nav-arrow"
+                  className="book-details-nav-arrow"
                   onClick={(e) => {
                     e.stopPropagation();
                     navigateZoom('prev');
@@ -295,7 +304,7 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
                   &#10094;
                 </button>
                 <button
-                  className="nav-arrow"
+                  className="book-details-nav-arrow"
                   onClick={(e) => {
                     e.stopPropagation();
                     navigateZoom('next');
@@ -307,9 +316,9 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
               <img
                 src={images[zoomedImageIndex]}
                 alt="Agrandissement"
-                className="zoomed-image"
+                className="book-details-zoomed-image"
               />
-              <button className="close-button" onClick={closeZoom}>
+              <button className="book-details-close-button" onClick={closeZoom}>
                 &#10005;
               </button>
             </div>

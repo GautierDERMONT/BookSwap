@@ -8,6 +8,7 @@
 .app-content {
   flex: 1;
   padding: 1rem;
+  border-radius: 50 px;
 }
 
 @media (max-width: 768px) {

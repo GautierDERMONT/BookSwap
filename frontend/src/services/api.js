@@ -1,12 +1,12 @@
 import axios from 'axios';
 
-// Instance axios configurée pour communiquer avec le backend et envoyer les cookies
+// Instance Axios avec cookies et base URL du backend
 const api = axios.create({
   baseURL: 'http://localhost:5001/api',
   withCredentials: true,
 });
 
-// Fonction pour envoyer un formulaire avec ajout de livre, gestion timeout et headers multipart
+// Envoi d'un formulaire d'ajout de livre (multipart + timeout)
 export const addBook = async (formData) => {
   try {
     const response = await api.post('/books', formData, {
@@ -15,7 +15,6 @@ export const addBook = async (formData) => {
     });
     return response.data;
   } catch (error) {
-    // Log détaillé en cas d’erreur
     console.error('Error:', {
       message: error.message,
       response: error.response?.data,

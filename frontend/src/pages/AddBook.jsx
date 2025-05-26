@@ -281,6 +281,7 @@ const AddBook = () => {
             required
           />
         </div>
+        <br />
 
         <div className="form-group">
           <label>Disponibilité *</label>
@@ -294,7 +295,7 @@ const AddBook = () => {
             <option value="Réservé">Réservé</option>
           </select>
         </div>
-
+        <br />
         <div className="form-group">
           <label>Description *</label>
           <textarea

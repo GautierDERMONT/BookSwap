@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600&display=swap');
+
 .home-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -6,14 +8,42 @@
 }
 
 .home-cta-box {
+  position: relative;
   background-color: #f8f9fa;
-  border: 2px solid #e0e0e0;
   border-radius: 12px;
   padding: 2.5rem;
   text-align: center;
   margin-bottom: 3rem;
   width: 93%;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  z-index: 1;
+}
+
+.home-cta-box::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(135deg, #0c6546, #4e9a5e, #0c6546);
+  border-radius: 18px;
+  z-index: -1;
+  background-size: 200% 200%;
+  animation: borderAnimation 5s ease infinite;
+  mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: destination-out;
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+@keyframes borderAnimation {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .home-cta-text {
@@ -54,32 +84,47 @@
 }
 
 .home-add-book-button:hover {
-  background-color: #4e9a5e;          /* Changement de couleur */
-  transform: translateY(-3px);        /* Soulèvement */
-  box-shadow: 0 6px 12px rgba(12, 101, 70, 0.3); /* Ombre plus forte */
+  background-color: #4e9a5e;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(12, 101, 70, 0.3);
 }
 
 .home-content {
   padding: 2rem 0;
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .home-content h1 {
   color: #34495e;
   font-size: 2.2rem;
-  margin-bottom: 1.5rem;
+  margin: 2rem 0;
   font-weight: 700;
   font-family: 'Montserrat', sans-serif;
   text-align: center;
+  position: relative;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.home-content h1::before,
+.home-content h1::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #0c6546, transparent);
+  margin: 0 20px;
 }
 
 .home-book-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 30px;
-  justify-items: center;
+  grid-template-columns: repeat(5, minmax(0, 220px)); /* Modification clé ici */
+  gap: 70px;
+  justify-content: center;
   padding: 1rem 0;
+  width: 100%;
+  margin-left: -10px; /* Décalage vers la gauche */
+
 }
 
 .home-loading-message,
@@ -92,9 +137,26 @@
   padding: 2rem 0;
 }
 
+@media (max-width: 1200px) {
+  .home-book-list {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .home-content h1 {
+    font-size: 2rem;
+  }
+  
+  .home-book-list {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+}
+
 @media (max-width: 768px) {
   .home-container {
-    padding: 1rem;
+    padding: 1.5rem;
   }
 
   .home-cta-box {
@@ -112,22 +174,57 @@
   }
 
   .home-add-book-button {
-    padding: 10px 20px;
+    padding: 12px 24px;
     font-size: 1rem;
   }
 
   .home-content h1 {
     font-size: 1.8rem;
+    margin: 1.5rem 0;
   }
 
   .home-book-list {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 20px;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .home-content h1 {
+    font-size: 1.6rem;
+  }
+  
+  .home-content h1::before,
+  .home-content h1::after {
+    margin: 0 15px;
+  }
+
+  .home-book-list {
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
   }
 }
 
 @media (max-width: 480px) {
+  .home-container {
+    padding: 1rem;
+  }
+
+  .home-content h1 {
+    font-size: 1.4rem;
+    flex-direction: column;
+    gap: 10px;
+    white-space: normal;
+  }
+
+  .home-content h1::before,
+  .home-content h1::after {
+    width: 80%;
+    margin: 0;
+  }
+
   .home-book-list {
     grid-template-columns: 1fr;
+    max-width: 300px;
+    margin: 0 auto;
   }
 }

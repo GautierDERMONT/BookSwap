@@ -92,7 +92,7 @@ const HomePage = ({ isAuthenticated, currentUser, onOpenLogin }) => {
 
       {/* Liste des livres disponibles */}
       <main className="home-content">
-        <h1>Parcourir la liste des livres:</h1>
+        <h1>📚 Parcourir la liste des livres</h1>
         <br />
         <div className="home-book-list">
           {/* Affichage conditionnel selon l’état du chargement ou erreurs */}

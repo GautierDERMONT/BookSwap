@@ -1,4 +1,3 @@
-// frontend/src/pages/SearchResults.jsx
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import api from '../services/api';
@@ -25,10 +24,9 @@ export default function SearchResults({ isAuthenticated, currentUser, onOpenLogi
         if (locationFilter) url += `location=${encodeURIComponent(locationFilter)}&`;
         if (conditionFilter) url += `condition=${encodeURIComponent(conditionFilter)}&`;
         if (genreFilter) url += `genre=${encodeURIComponent(genreFilter)}`;
-        
-        // Supprimer le dernier '&' si présent
+
         url = url.endsWith('&') ? url.slice(0, -1) : url;
-        
+
         const res = await api.get(url);
         setBooks(res.data.books);
         setLoading(false);
@@ -42,15 +40,15 @@ export default function SearchResults({ isAuthenticated, currentUser, onOpenLogi
     fetchSearchResults();
   }, [location.search]);
 
-  if (loading) return <div className="search-loading">Recherche en cours...</div>;
-  if (error) return <div className="search-error">{error}</div>;
+  if (loading) return <div className="sr-loading">Recherche en cours...</div>;
+  if (error) return <div className="sr-error">{error}</div>;
 
   return (
-    <div className="search-results-container">
-      <h2>Résultats de recherche</h2>
-      
+    <div className="sr-container">
+      <h2 className="sr-title">🔎 Résultats de recherche</h2>
+
       {books.length > 0 ? (
-        <div className="book-list">
+        <div className="sr-book-list">
           {books.map((book) => (
             <BookCard 
               key={book.id} 
@@ -62,7 +60,7 @@ export default function SearchResults({ isAuthenticated, currentUser, onOpenLogi
           ))}
         </div>
       ) : (
-        <p className="no-results">
+        <p className="sr-no-results">
           Aucun résultat trouvé pour vos critères de recherche
         </p>
       )}

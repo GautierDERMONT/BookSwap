@@ -1,4 +1,4 @@
-const express = require('express');
+const express = require('express'); 
 const router = express.Router();
 const authenticate = require('../middleware/authenticate');
 const { pool } = require('../config/db');
@@ -6,16 +6,19 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+// Configuration du stockage des fichiers uploadés avec multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, path.join(__dirname, '../uploads/messages'));
   },
   filename: (req, file, cb) => {
+    // Nom unique pour chaque fichier uploadé
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     cb(null, uniqueSuffix + path.extname(file.originalname));
   }
 });
 
+// Filtrage pour accepter uniquement les fichiers images
 const upload = multer({ 
   storage: storage,
   fileFilter: (req, file, cb) => {
@@ -27,8 +30,10 @@ const upload = multer({
   }
 });
 
+// Récupérer les conversations de l'utilisateur connecté avec détails
 router.get('/conversations', authenticate, async (req, res) => {
   try {
+    // Requête pour récupérer les conversations + interlocuteur + dernier message + nombre de messages non lus
     const [conversations] = await pool.query(
       `SELECT 
         c.id, 
@@ -59,6 +64,7 @@ router.get('/conversations', authenticate, async (req, res) => {
       [req.userId, req.userId, req.userId, req.userId, req.userId, req.userId]
     );
 
+    // Formatage des données pour la réponse JSON
     res.json({
       conversations: conversations.map(conv => ({
         id: conv.id,
@@ -74,6 +80,7 @@ router.get('/conversations', authenticate, async (req, res) => {
       }))
     });
   } catch (err) {
+    // Gestion des erreurs en base
     console.error('Database error:', err);
     res.status(500).json({ 
       error: "Database error",
@@ -83,11 +90,13 @@ router.get('/conversations', authenticate, async (req, res) => {
   }
 });
 
+// Supprimer une conversation (et ses messages) si l'utilisateur y a accès
 router.delete('/conversations/:id', authenticate, async (req, res) => {
   try {
     const conversationId = req.params.id;
     const userId = req.userId;
 
+    // Vérification d'appartenance à la conversation
     const [conv] = await pool.query(
       `SELECT id FROM conversations 
        WHERE id = ? AND (user1_id = ? OR user2_id = ?)`,
@@ -98,22 +107,26 @@ router.delete('/conversations/:id', authenticate, async (req, res) => {
       return res.status(403).json({ error: "Non autorisé" });
     }
 
+    // Suppression des messages puis de la conversation
     await pool.query(`DELETE FROM messages WHERE conversation_id = ?`, [conversationId]);
     await pool.query(`DELETE FROM conversations WHERE id = ?`, [conversationId]);
 
     res.json({ success: true });
     
   } catch (err) {
+    // Gestion des erreurs serveur
     console.error('Error deleting conversation:', err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
 
+// Créer une nouvelle conversation ou retourner l'existante entre deux utilisateurs sur un livre donné
 router.post('/conversations', authenticate, async (req, res) => {
   try {
     const { bookId, recipientId } = req.body;
     const userId = req.userId;
 
+    // Recherche conversation existante
     const [existing] = await pool.query(
       `SELECT id FROM conversations 
        WHERE ((user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?))
@@ -122,12 +135,14 @@ router.post('/conversations', authenticate, async (req, res) => {
     );
 
     if (existing.length > 0) {
+      // Retourner conversation existante
       return res.json({ 
         conversationId: existing[0].id,
         isExisting: true
       });
     }
 
+    // Création d'une nouvelle conversation
     const [result] = await pool.query(
       `INSERT INTO conversations (user1_id, user2_id, book_id) 
        VALUES (?, ?, ?)`,
@@ -140,16 +155,19 @@ router.post('/conversations', authenticate, async (req, res) => {
     });
 
   } catch (err) {
+    // Gestion des erreurs serveur
     console.error('Error creating conversation:', err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
 
+// Marquer tous les messages d'une conversation comme lus pour l'utilisateur
 router.post('/conversations/:conversationId/mark-as-read', authenticate, async (req, res) => {
   try {
     const { conversationId } = req.params;
     const userId = req.userId;
 
+    // Mise à jour des messages non lus envoyés par l'autre utilisateur
     await pool.query(
       `UPDATE messages SET is_read = TRUE 
        WHERE conversation_id = ? AND sender_id != ?`,
@@ -158,16 +176,19 @@ router.post('/conversations/:conversationId/mark-as-read', authenticate, async (
 
     res.json({ success: true });
   } catch (err) {
+    // Gestion des erreurs serveur
     console.error('Error marking as read:', err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
 
+// Récupérer les messages d'une conversation, avec vérification d'accès
 router.get('/conversations/:conversationId/messages', authenticate, async (req, res) => {
   try {
     const { conversationId } = req.params;
     const userId = req.userId;
 
+    // Vérifier que l'utilisateur fait partie de la conversation
     const [convCheck] = await pool.query(
       `SELECT id FROM conversations 
        WHERE id = ? AND (user1_id = ? OR user2_id = ?)`,
@@ -178,6 +199,7 @@ router.get('/conversations/:conversationId/messages', authenticate, async (req, 
       return res.status(403).json({ error: "Accès non autorisé" });
     }
 
+    // Récupérer les messages avec infos expéditeur
     const [messages] = await pool.query(
       `SELECT 
         m.id,
@@ -195,6 +217,7 @@ router.get('/conversations/:conversationId/messages', authenticate, async (req, 
       [conversationId]
     );
 
+    // Marquer les messages comme lus
     await pool.query(
       `UPDATE messages SET is_read = TRUE 
        WHERE conversation_id = ? AND sender_id != ?`,
@@ -204,17 +227,20 @@ router.get('/conversations/:conversationId/messages', authenticate, async (req, 
     res.json({ messages });
 
   } catch (err) {
+    // Gestion des erreurs serveur
     console.error('Error fetching messages:', err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
 
+// Envoyer un message texte dans une conversation
 router.post('/conversations/:conversationId/messages', authenticate, async (req, res) => {
   try {
     const { conversationId } = req.params;
     const { content } = req.body;
     const userId = req.userId;
 
+    // Vérifier accès à la conversation
     const [convCheck] = await pool.query(
       `SELECT id FROM conversations 
        WHERE id = ? AND (user1_id = ? OR user2_id = ?)`,
@@ -225,6 +251,7 @@ router.post('/conversations/:conversationId/messages', authenticate, async (req,
       return res.status(403).json({ error: "Accès non autorisé" });
     }
 
+    // Insérer le message
     const [result] = await pool.query(
       `INSERT INTO messages (conversation_id, sender_id, content)
        VALUES (?, ?, ?)`,
@@ -236,11 +263,13 @@ router.post('/conversations/:conversationId/messages', authenticate, async (req,
     });
 
   } catch (err) {
+    // Gestion des erreurs serveur
     console.error('Error sending message:', err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
 
+// Envoyer un message image dans une conversation
 router.post('/conversations/:conversationId/messages/image', 
   authenticate, 
   upload.single('image'), 
@@ -250,6 +279,7 @@ router.post('/conversations/:conversationId/messages/image',
       const userId = req.userId;
       const imagePath = req.file ? `/uploads/messages/${req.file.filename}` : null;
 
+      // Vérifier accès à la conversation
       const [convCheck] = await pool.query(
         `SELECT id FROM conversations 
          WHERE id = ? AND (user1_id = ? OR user2_id = ?)`,
@@ -257,12 +287,14 @@ router.post('/conversations/:conversationId/messages/image',
       );
 
       if (convCheck.length === 0) {
+        // Supprimer le fichier uploadé si accès refusé
         if (req.file) {
           fs.unlinkSync(req.file.path);
         }
         return res.status(403).json({ error: "Accès non autorisé" });
       }
 
+      // Insérer le message avec image
       const [result] = await pool.query(
         `INSERT INTO messages (conversation_id, sender_id, content, image_url)
          VALUES (?, ?, ?, ?)`,
@@ -275,6 +307,7 @@ router.post('/conversations/:conversationId/messages/image',
       });
 
     } catch (err) {
+      // Supprimer le fichier uploadé en cas d'erreur
       console.error('Error sending image message:', err);
       if (req.file) {
         fs.unlinkSync(req.file.path);
@@ -287,10 +320,12 @@ router.post('/conversations/:conversationId/messages/image',
   }
 );
 
+// Récupérer le nombre total de messages non lus de l'utilisateur sur toutes ses conversations
 router.get('/unread-count', authenticate, async (req, res) => {
   try {
     const userId = req.userId;
 
+    // Compter les messages non lus envoyés par d'autres utilisateurs
     const [rows] = await pool.query(
       `SELECT COUNT(*) as unreadCount
        FROM messages m
@@ -303,6 +338,7 @@ router.get('/unread-count', authenticate, async (req, res) => {
     res.json({ unreadCount: rows[0].unreadCount });
 
   } catch (err) {
+    // Gestion des erreurs serveur
     console.error('Error fetching unread count:', err);
     res.status(500).json({ error: "Erreur serveur" });
   }

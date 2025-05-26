@@ -117,67 +117,67 @@ export default function Books({ isAuthenticated, currentUser, onOpenLogin }) {
     setLocationSearch('');
   };
 
-  if (loading) return <p>Chargement...</p>;
-  if (error) return <p>{error}</p>;
+  if (loading) return <p className="bp-loading">Chargement...</p>;
+  if (error) return <p className="bp-error">{error}</p>;
 
   return (
-    <div className="books-page">
-      <div className="books-search-container">
-        <div className="books-search-bar">
+    <div className="bp-container">
+      <div className="bp-search-container">
+        <div className="bp-search-bar">
           <input
             type="text"
             placeholder="Rechercher par titre ou auteur..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <Search size={18} className="books-search-icon" />
+          <Search size={18} className="bp-search-icon" />
         </div>
       </div>
 
-      <div className="filters-container">
-        <div className="filter-group">
-          <div className="filter-header">
+      <div className="bp-filters-container">
+        <div className="bp-filter-group">
+          <div className="bp-filter-header">
             <label>Catégories</label>
             <input
               type="text"
               placeholder="Rechercher..."
               value={categorySearch}
               onChange={(e) => setCategorySearch(e.target.value)}
-              className="filter-search"
+              className="bp-filter-search"
             />
           </div>
-            <div className="scrollable-checkbox-group">
-              {categories
-                .filter(cat => cat.toLowerCase().includes(categorySearch.toLowerCase()))
-                .map(category => (
-                  <label key={category} className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={filters.categories.includes(category)}
-                      onChange={(e) => handleFilterChange('categories', category, e.target.checked)}
-                    />
-                    <span className="checkbox-text">{category}</span>
-                  </label>
-                ))}
-            </div>
+          <div className="bp-scrollable-checkbox-group">
+            {categories
+              .filter(cat => cat.toLowerCase().includes(categorySearch.toLowerCase()))
+              .map(category => (
+                <label key={category} className="bp-checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={filters.categories.includes(category)}
+                    onChange={(e) => handleFilterChange('categories', category, e.target.checked)}
+                  />
+                  <span className="bp-checkbox-text">{category}</span>
+                </label>
+              ))}
+          </div>
         </div>
         
-        <div className="filter-group">
-          <div className="filter-header">
+        <div className="bp-filter-group">
+          <div className="bp-filter-header">
             <label>États</label>
             <input
               type="text"
               placeholder="Rechercher..."
               value={conditionSearch}
               onChange={(e) => setConditionSearch(e.target.value)}
-              className="filter-search"
+              className="bp-filter-search"
             />
           </div>
-          <div className="scrollable-checkbox-group">
+          <div className="bp-scrollable-checkbox-group">
             {conditions
               .filter(cond => cond.toLowerCase().includes(conditionSearch.toLowerCase()))
               .map(condition => (
-                <label key={condition} className="checkbox-label">
+                <label key={condition} className="bp-checkbox-label">
                   <input
                     type="checkbox"
                     checked={filters.conditions.includes(condition)}
@@ -189,22 +189,22 @@ export default function Books({ isAuthenticated, currentUser, onOpenLogin }) {
           </div>
         </div>
         
-        <div className="filter-group">
-          <div className="filter-header">
+        <div className="bp-filter-group">
+          <div className="bp-filter-header">
             <label>Localisations</label>
             <input
               type="text"
               placeholder="Rechercher..."
               value={locationSearch}
               onChange={(e) => setLocationSearch(e.target.value)}
-              className="filter-search"
+              className="bp-filter-search"
             />
           </div>
-          <div className="scrollable-checkbox-group">
+          <div className="bp-scrollable-checkbox-group">
             {locations
               .filter(loc => loc.toLowerCase().includes(locationSearch.toLowerCase()))
               .map(location => (
-                <label key={location} className="checkbox-label">
+                <label key={location} className="bp-checkbox-label">
                   <input
                     type="checkbox"
                     checked={filters.locations.includes(location)}
@@ -216,7 +216,7 @@ export default function Books({ isAuthenticated, currentUser, onOpenLogin }) {
           </div>
         </div>
         
-        <div className="filter-group">
+        <div className="bp-filter-group">
           <label>Trier par</label>
           <select value={sortOption} onChange={(e) => setSortOption(e.target.value)}>
             <option value="newest">Plus récent</option>
@@ -228,19 +228,19 @@ export default function Books({ isAuthenticated, currentUser, onOpenLogin }) {
           </select>
         </div>
         
-        <button onClick={resetFilters} className="reset-filters">
+        <button onClick={resetFilters} className="bp-reset-filters">
           Réinitialiser tout
         </button>
       </div>
 
-      <div className="results-info">
+      <div className="bp-results-info">
         {searchQuery && (
           <p>Résultats pour : "{searchQuery}"</p>
         )}
         <p>{filteredBooks.length} livre(s) trouvé(s)</p>
       </div>
 
-      <div className="book-list">
+      <div className="bp-book-list">
         {filteredBooks.length > 0 ? (
           filteredBooks.map((book) => (
             <BookCard 
@@ -252,7 +252,7 @@ export default function Books({ isAuthenticated, currentUser, onOpenLogin }) {
             />
           ))
         ) : (
-          <p className="no-results">Aucun livre ne correspond aux critères de recherche</p>
+          <p className="bp-no-results">Aucun livre ne correspond aux critères de recherche</p>
         )}
       </div>
     </div>

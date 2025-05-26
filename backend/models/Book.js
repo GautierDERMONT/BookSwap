@@ -1,6 +1,9 @@
 const { pool } = require('../config/db');
 
+// Classe Book pour gérer les opérations liées aux livres dans la base de données
 class Book {
+
+  // Création d'un nouveau livre en base de données avec les données reçues et l'ID utilisateur
   static async create(bookData, userId) {
     const query = `
       INSERT INTO book 
@@ -29,6 +32,7 @@ class Book {
     }
   }
 
+  // Ajout des images associées à un livre donné dans la table book_images
   static async addImages(bookId, images) {
     const queries = images.map(image => 
       pool.query(
@@ -39,6 +43,7 @@ class Book {
     await Promise.all(queries);
   }
 
+  // Récupération de tous les livres avec leurs informations et images associées
   static async getAllBooks() {
     const query = `
       SELECT 

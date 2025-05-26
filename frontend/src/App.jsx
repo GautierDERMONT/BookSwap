@@ -1,4 +1,3 @@
-// Importation des modules et composants nécessaires
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
@@ -17,7 +16,6 @@ import Favorites from './pages/Favorites';
 import Footer from './components/Footer/Footer';
 import './App.css';
 
-// Liste des routes protégées qui nécessitent une authentification
 const protectedRoutes = [
   '/add-book',
   '/profile',
@@ -27,28 +25,23 @@ const protectedRoutes = [
 ];
 
 function App() {
-  // États de l'application
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // état de connexion
-  const [currentUser, setCurrentUser] = useState(null);           // infos utilisateur connecté
-  const [activeModal, setActiveModal] = useState(null);           // modal actif : login ou signup
-  const [loading, setLoading] = useState(true);                   // état de chargement de l'app
-  const [pendingAction, setPendingAction] = useState(null);       // action à exécuter après login
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [activeModal, setActiveModal] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Hooks de navigation et de localisation
   const location = useLocation();
   const navigate = useNavigate();
   const params = useParams();
 
-  // Effet secondaire : scroll en haut de la page à chaque changement de route
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  // Vérifie l'état d'authentification de l'utilisateur à chaque changement de route ou d'action différée
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await axios.get('http://localhost:5001/api/auth/me', { 
+        const response = await axios.get('http://localhost:5001/api/auth/me', {
           withCredentials: true,
           validateStatus: (status) => status < 500
         });
@@ -56,10 +49,6 @@ function App() {
         if (response.status === 200) {
           setIsAuthenticated(true);
           setCurrentUser(response.data);
-          if (pendingAction) {
-            pendingAction(); // Exécute l'action différée après connexion
-            setPendingAction(null);
-          }
         } else {
           setIsAuthenticated(false);
           setCurrentUser(null);
@@ -73,18 +62,16 @@ function App() {
     };
 
     checkAuth();
-  }, [location.pathname, pendingAction]);
+  }, [location.pathname]);
 
-  // Fonction de connexion
   const handleLogin = async (credentials) => {
     try {
       const response = await axios.post(
-        'http://localhost:5001/api/auth/login', 
+        'http://localhost:5001/api/auth/login',
         credentials,
         { withCredentials: true }
       );
 
-      // Enregistre l'utilisateur et ferme la modal
       setIsAuthenticated(true);
       setCurrentUser({
         id: response.data.userId,
@@ -94,25 +81,7 @@ function App() {
       });
       setActiveModal(null);
 
-      // Redirections spécifiques après login
-      if (location.state?.isOwnerRedirect) {
-        navigate(`/books/${location.state.bookId}/edit`, { replace: true });
-      }
-      else if (location.state?.fromMessage) {
-        navigate('/messages', { 
-          state: { 
-            bookId: location.state.bookId,
-            recipientId: location.state.recipientId,
-            bookInfo: location.state.bookInfo,
-            interlocutor: location.state.interlocutor
-          },
-          replace: true
-        });
-      }
-      else if (location.pathname.startsWith('/user/') && response.data.userId === location.pathname.split('/')[2]) {
-        navigate('/profile', { replace: true });
-      }
-      else if (location.state?.redirectAfterLogin) {
+      if (location.state?.redirectAfterLogin) {
         navigate(location.state.redirectAfterLogin, { replace: true });
       } else {
         navigate(location.pathname, { replace: true });
@@ -123,12 +92,8 @@ function App() {
     }
   };
 
-  // Fonction pour exécuter une action après authentification
   const executeAfterAuth = (action) => {
-    if (isAuthenticated) {
-      action();
-    } else {
-      setPendingAction(() => action);
+    if (!isAuthenticated) {
       setActiveModal('login');
       navigate(location.pathname, {
         state: { redirectAfterLogin: location.pathname }
@@ -136,7 +101,6 @@ function App() {
     }
   };
 
-  // Fonction d'inscription
   const handleSignup = async (userData) => {
     try {
       await axios.post('http://localhost:5001/api/auth/register', {
@@ -152,7 +116,6 @@ function App() {
     }
   };
 
-  // Fonction de déconnexion
   const handleLogout = async () => {
     try {
       await axios.post(
@@ -163,9 +126,7 @@ function App() {
 
       setIsAuthenticated(false);
       setCurrentUser(null);
-      setPendingAction(null);
 
-      // Redirection vers l'accueil si l'utilisateur est sur une page protégée
       const isProtected = protectedRoutes.some(route => {
         const regex = new RegExp('^' + route.replace(/:\w+/g, '\\w+') + '$');
         return regex.test(location.pathname);
@@ -181,14 +142,12 @@ function App() {
     }
   };
 
-  // Affiche un écran de chargement pendant la vérification de session
   if (loading) {
     return <div className="loading-screen">Chargement...</div>;
   }
 
   return (
     <div className="app">
-      {/* En-tête du site */}
       <Header
         isAuthenticated={isAuthenticated}
         currentUser={currentUser}
@@ -197,85 +156,62 @@ function App() {
         onLogout={handleLogout}
       />
 
-      {/* Contenu principal avec les routes */}
       <main className="app-content">
         <Routes>
-          {/* Route d'accueil */}
           <Route path="/" element={
-            <HomePage 
-              isAuthenticated={isAuthenticated} 
-              currentUser={currentUser} 
-              onOpenLogin={() => setActiveModal('login')} 
-            />
-          } />
-
-          {/* Liste des livres */}
-          <Route path="/books" element={
-            <BooksPage 
+            <HomePage
               isAuthenticated={isAuthenticated}
               currentUser={currentUser}
               onOpenLogin={() => setActiveModal('login')}
             />
           } />
-
-          {/* Détails d'un livre */}
+          <Route path="/books" element={
+            <BooksPage
+              isAuthenticated={isAuthenticated}
+              currentUser={currentUser}
+              onOpenLogin={() => setActiveModal('login')}
+            />
+          } />
           <Route path="/books/:id" element={
-            <BookDetails 
+            <BookDetails
               currentUser={currentUser}
               executeAfterAuth={executeAfterAuth}
             />
           } />
-
-          {/* Modifier un livre - protégé */}
           <Route path="/books/:id/edit" element={
             isAuthenticated ? <EditBook /> : <Navigate to="/" replace />
           } />
-
-          {/* Ajouter un livre - protégé */}
           <Route path="/add-book" element={
             isAuthenticated ? <AddBook /> : <Navigate to="/" replace />
           } />
-
-          {/* Profil personnel - protégé */}
           <Route path="/profile" element={
-            isAuthenticated ? 
-              <Profile currentUser={currentUser} executeAfterAuth={executeAfterAuth} /> : 
+            isAuthenticated ?
+              <Profile currentUser={currentUser} /> :
               <Navigate to="/" state={{ redirectAfterLogin: '/profile' }} replace />
           } />
-
-          {/* Messagerie - protégé */}
           <Route path="/messages" element={
-            isAuthenticated ? 
-              <Messages currentUser={currentUser} /> : 
+            isAuthenticated ?
+              <Messages currentUser={currentUser} /> :
               <Navigate to="/" state={{ redirectAfterLogin: '/messages' }} replace />
           } />
-
-          {/* Conversation spécifique - protégé */}
           <Route path="/messages/:conversationId" element={
-            isAuthenticated ? 
-              <Messages currentUser={currentUser} isAuthenticated={isAuthenticated} /> : 
+            isAuthenticated ?
+              <Messages currentUser={currentUser} /> :
               <Navigate to="/" state={{ redirectAfterLogin: `/messages/${params.conversationId}` }} replace />
           } />
-
-          {/* Résultats de recherche */}
           <Route path="/search" element={
-            <SearchResults 
-              isAuthenticated={isAuthenticated} 
-              currentUser={currentUser} 
+            <SearchResults
+              isAuthenticated={isAuthenticated}
+              currentUser={currentUser}
               executeAfterAuth={executeAfterAuth}
             />
           } />
-
-          {/* Profil public d'un autre utilisateur */}
           <Route path="/user/:userId" element={
-            <Profile 
-              currentUser={currentUser} 
-              isPublicProfile={true} 
-              executeAfterAuth={executeAfterAuth}
+            <Profile
+              currentUser={currentUser}
+              isPublicProfile={true}
             />
           } />
-
-          {/* Favoris - protégé */}
           <Route path="/favorites" element={
             isAuthenticated ?
               <Favorites currentUser={currentUser} /> :
@@ -284,10 +220,8 @@ function App() {
         </Routes>
       </main>
 
-      {/* Pied de page */}
       <Footer />
 
-      {/* Modale de connexion */}
       {activeModal === 'login' && (
         <LoginModal
           onClose={() => setActiveModal(null)}
@@ -295,8 +229,6 @@ function App() {
           onSwitchToSignup={() => setActiveModal('signup')}
         />
       )}
-
-      {/* Modale d'inscription */}
       {activeModal === 'signup' && (
         <SignupModal
           onClose={() => setActiveModal(null)}

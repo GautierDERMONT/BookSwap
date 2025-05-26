@@ -1,30 +1,27 @@
-/* Ajoutez cette ligne dans le <head> de votre HTML pour charger la police */
-/* <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet"> */
-
 body {
   font-family: 'Montserrat', 'Segoe UI', sans-serif;
 }
 
-.books-page {
+.bp-container {
   padding: 20px;
   max-width: 1400px;
   margin: 0 auto;
   font-family: inherit;
 }
 
-.books-search-container {
+.bp-search-container {
   margin: 20px 0;
   width: 100%;
   max-width: 600px;
 }
 
-.books-search-bar {
+.bp-search-bar {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.books-search-bar input {
+.bp-search-bar input {
   width: 100%;
   padding: 12px 15px 12px 45px;
   border: 2px solid #0c6546;
@@ -36,58 +33,58 @@ body {
   font-weight: 500;
 }
 
-.books-search-bar input:focus {
+.bp-search-bar input:focus {
   border-color: #4e9a5e;
   box-shadow: 0 0 8px rgba(78, 154, 94, 0.4);
 }
 
-.books-search-icon {
+.bp-search-icon {
   position: absolute;
   left: 15px;
   color: #0c6546;
   font-size: 20px;
 }
 
-.filters-container {
+.bp-filters-container {
   display: flex;
   flex-wrap: wrap;
   gap: 25px;
   margin-bottom: 35px;
 }
 
-.filter-group {
+.bp-filter-group {
   flex: 1;
   min-width: 220px;
   max-width: 320px;
 }
 
-.filter-header {
+.bp-filter-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
   padding-bottom: 5px;
-  border-bottom: 2px solid #0c6546;
+  border-bottom: 1px solid #0c6546;
 }
 
-.filter-header label {
+.bp-filter-header label {
   font-weight: 700;
   margin-right: 12px;
   color: #34495e;
   font-size: 16px;
 }
 
-.filter-search {
+.bp-filter-search {
   width: 130px;
   padding: 6px 10px;
-  border: 2px solid #0c6546;
+  border: 0px solid #0c6546;
   border-radius: 6px;
   font-size: 14px;
   font-family: inherit;
   font-weight: 500;
 }
 
-.scrollable-checkbox-group {
+.bp-scrollable-checkbox-group {
   max-height: 120px;
   overflow-y: auto;
   padding-right: 8px;
@@ -100,21 +97,21 @@ body {
   background-color: #f8f8f8;
 }
 
-.scrollable-checkbox-group::-webkit-scrollbar {
+.bp-scrollable-checkbox-group::-webkit-scrollbar {
   width: 8px;
 }
 
-.scrollable-checkbox-group::-webkit-scrollbar-track {
+.bp-scrollable-checkbox-group::-webkit-scrollbar-track {
   background: #f1f1f1;
   border-radius: 4px;
 }
 
-.scrollable-checkbox-group::-webkit-scrollbar-thumb {
+.bp-scrollable-checkbox-group::-webkit-scrollbar-thumb {
   background: #4e9a5e;
   border-radius: 4px;
 }
 
-.checkbox-label {
+.bp-checkbox-label {
   display: flex;
   align-items: center;
   margin: 0;
@@ -129,18 +126,18 @@ body {
   font-weight: 500;
 }
 
-.checkbox-label:hover {
+.bp-checkbox-label:hover {
   background-color: rgba(78, 154, 94, 0.1);
 }
 
-.checkbox-text {
+.bp-checkbox-text {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   flex-grow: 1;
 }
 
-.checkbox-label input {
+.bp-checkbox-label input {
   margin-right: 10px;
   min-width: 18px;
   height: 18px;
@@ -148,11 +145,11 @@ body {
   accent-color: #4e9a5e;
 }
 
-.reset-filters {
+.bp-reset-filters {
   padding: 10px 15px;
   background: #0c6546;
   color: white;
-  margin-right: 20px; /* ou la valeur qui te convient */
+  margin-right: 20px;
   border: 2px solid #0c6546;
   border-radius: 6px;
   cursor: pointer;
@@ -163,26 +160,26 @@ body {
   font-family: inherit;
 }
 
-.reset-filters:hover {
+.bp-reset-filters:hover {
   background: #4e9a5e;
   border-color: #4e9a5e;
   transform: translateY(-1px);
 }
 
-.results-info {
+.bp-results-info {
   margin: 25px 0;
   font-size: 16px;
   color: #0c6546;
   font-weight: 600;
 }
 
-.book-list {
+.bp-book-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 25px;
 }
 
-.no-results {
+.bp-no-results {
   text-align: center;
   margin: 50px 0;
   color: #0c6546;
@@ -191,10 +188,10 @@ body {
   font-weight: 600;
 }
 
-.filter-group select {
+.bp-filter-group select {
   width: 100%;
   padding: 10px;
-  border: 2px solid #0c6546;
+  border: 1px solid #0c6546;
   border-radius: 6px;
   color: #0c6546;
   background-color: white;
@@ -203,74 +200,83 @@ body {
   font-family: inherit;
 }
 
-.filter-group select:focus {
+.bp-filter-group select:focus {
   outline: none;
   border-color: #4e9a5e;
   box-shadow: 0 0 5px rgba(78, 154, 94, 0.4);
 }
 
-/* Version Mobile */
 @media (max-width: 768px) {
-  .books-page {
+  .bp-container {
     padding: 15px;
   }
 
-  .books-search-bar input {
+  .bp-search-bar input {
     padding: 10px 15px 10px 40px;
     font-size: 15px;
   }
 
-  .filters-container {
+  .bp-filters-container {
     flex-direction: column;
     gap: 15px;
   }
 
-  .filter-group {
+  .bp-filter-group {
     min-width: 100%;
     max-width: 100%;
   }
 
-  .filter-header {
+  .bp-filter-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
 
-  .filter-search {
+  .bp-filter-search {
     width: 100%;
   }
 
-  .scrollable-checkbox-group {
+  .bp-scrollable-checkbox-group {
     max-height: 100px;
   }
 
-  .reset-filters {
+  .bp-reset-filters {
     width: 100%;
     margin-top: 10px;
   }
 
-  .book-list {
+  .bp-book-list {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 15px;
   }
 
-  .filter-group select {
+  .bp-filter-group select {
     padding: 8px;
   }
 }
 
-/* Version Très Petits Écrans */
 @media (max-width: 480px) {
-  .books-search-bar input {
+  .bp-search-bar input {
     padding: 8px 12px 8px 35px;
     font-size: 14px;
   }
 
-  .book-list {
+  .bp-book-list {
     grid-template-columns: 1fr;
   }
 
-  .results-info {
+  .bp-results-info {
     font-size: 15px;
   }
+}
+
+.bp-loading,
+.bp-error {
+  text-align: center;
+  padding: 50px;
+  font-size: 1.2rem;
+}
+
+.bp-error {
+  color: #d32f2f;
 }

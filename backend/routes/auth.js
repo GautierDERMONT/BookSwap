@@ -7,20 +7,22 @@ const { pool } = require('../config/db');
 const router = express.Router();
 const multer = require('multer');
 
+// Configuration du stockage des avatars avec multer
 const avatarStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(__dirname, '../uploads');
     if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+      fs.mkdirSync(uploadDir, { recursive: true });  // Création du dossier uploads si inexistant
     }
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, `temp_${Date.now()}${ext}`);
+    cb(null, `temp_${Date.now()}${ext}`);  // Nom temporaire unique
   }
 });
 
+// Initialisation multer avec filtres et limites de taille
 const upload = multer({ 
   storage: avatarStorage,
   fileFilter: (req, file, cb) => {
@@ -31,10 +33,11 @@ const upload = multer({
     }
   },
   limits: {
-    fileSize: 5 * 1024 * 1024
+    fileSize: 5 * 1024 * 1024 // Limite à 5 Mo
   }
 });
 
+// Middleware d'authentification basé sur JWT
 const authenticate = async (req, res, next) => {
   const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
   
@@ -57,6 +60,7 @@ const authenticate = async (req, res, next) => {
   }
 };
 
+// Route d'inscription d'un nouvel utilisateur
 router.post('/register', async (req, res) => {
   const { username, email, password } = req.body;
   
@@ -79,6 +83,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
+// Route de connexion utilisateur, renvoie un JWT en cookie
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -120,10 +125,12 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Route de déconnexion (suppression du cookie JWT)
 router.post('/logout', (req, res) => {
   res.clearCookie('token').json({ message: "Déconnexion réussie" });
 });
 
+// Route pour récupérer les infos de l'utilisateur connecté (sans données sensibles)
 router.get('/me', authenticate, async (req, res) => {
   try {
     const [users] = await pool.query(
@@ -140,6 +147,7 @@ router.get('/me', authenticate, async (req, res) => {
   }
 });
 
+// Route pour récupérer le profil complet (avec bio et localisation)
 router.get('/profile', authenticate, async (req, res) => {
   try {
     const [users] = await pool.query(
@@ -156,6 +164,7 @@ router.get('/profile', authenticate, async (req, res) => {
   }
 });
 
+// Route pour modifier le profil utilisateur (avec option changement de mot de passe)
 router.put('/profile', authenticate, async (req, res) => {
   const { username, location, bio, currentPassword, newPassword } = req.body;
   
@@ -195,6 +204,7 @@ router.put('/profile', authenticate, async (req, res) => {
   }
 });
 
+// Route pour mettre à jour l'avatar (upload + renommage + suppression ancien avatar)
 router.put('/avatar', authenticate, upload.single('avatar'), async (req, res) => {
   try {
     if (!req.file) {
@@ -240,6 +250,7 @@ router.put('/avatar', authenticate, upload.single('avatar'), async (req, res) =>
   }
 });
 
+// Route pour supprimer l'avatar de l'utilisateur
 router.delete('/avatar', authenticate, async (req, res) => {
   try {
     const [users] = await pool.query('SELECT avatar FROM users WHERE id = ?', [req.userId]);
@@ -261,10 +272,11 @@ router.delete('/avatar', authenticate, async (req, res) => {
   }
 });
 
+// Route pour récupérer le profil d'un utilisateur par son ID (publique)
 router.get('/profile/:userId', async (req, res) => {
   try {
     const [users] = await pool.query(
-      'SELECT id, username, avatar, location, bio FROM users WHERE id = ?',
+      'SELECT id, username, email, avatar, location, bio FROM users WHERE id = ?', // Ajout de email
       [req.params.userId]
     );
     
@@ -277,20 +289,18 @@ router.get('/profile/:userId', async (req, res) => {
   }
 });
 
-// Ajoutez cette route dans auth.js juste avant module.exports = router;
+// Route pour supprimer le compte utilisateur avec nettoyage complet (transactions)
 router.delete('/account', authenticate, async (req, res) => {
   try {
-    // Commencer une transaction
     await pool.query('START TRANSACTION');
 
-    // 1. Supprimer les images des livres de l'utilisateur
+    // 1. Supprimer les images associées aux livres de l'utilisateur
     const [userBooks] = await pool.query('SELECT id FROM book WHERE users_id = ?', [req.userId]);
     const bookIds = userBooks.map(book => book.id);
 
     if (bookIds.length > 0) {
       const [bookImages] = await pool.query('SELECT image_path FROM book_images WHERE book_id IN (?)', [bookIds]);
       
-      // Supprimer les fichiers physiques
       bookImages.forEach(image => {
         const imagePath = path.join(__dirname, '../uploads', path.basename(image.image_path));
         if (fs.existsSync(imagePath)) {
@@ -298,14 +308,13 @@ router.delete('/account', authenticate, async (req, res) => {
         }
       });
 
-      // Supprimer les entrées dans book_images
       await pool.query('DELETE FROM book_images WHERE book_id IN (?)', [bookIds]);
     }
 
     // 2. Supprimer les messages de l'utilisateur
     await pool.query('DELETE FROM messages WHERE sender_id = ?', [req.userId]);
 
-    // 3. Supprimer les conversations de l'utilisateur
+    // 3. Supprimer les conversations impliquant l'utilisateur
     await pool.query('DELETE FROM conversations WHERE user1_id = ? OR user2_id = ?', [req.userId, req.userId]);
 
     // 4. Supprimer les favoris de l'utilisateur
@@ -323,16 +332,13 @@ router.delete('/account', authenticate, async (req, res) => {
       }
     }
 
-    // 7. Finalement, supprimer l'utilisateur
+    // 7. Supprimer le compte utilisateur
     await pool.query('DELETE FROM users WHERE id = ?', [req.userId]);
 
-    // Valider la transaction
     await pool.query('COMMIT');
 
-    // Déconnecter l'utilisateur
     res.clearCookie('token').json({ message: "Compte supprimé avec succès" });
   } catch (err) {
-    // Annuler la transaction en cas d'erreur
     await pool.query('ROLLBACK');
     console.error('Error deleting account:', err);
     res.status(500).json({ error: "Erreur lors de la suppression du compte" });

@@ -316,7 +316,7 @@ const EditBook = () => {
             required
           />
         </div>
-
+        <br />
         <div className="form-group">
           <label>Disponibilité *</label>
           <select
@@ -330,7 +330,7 @@ const EditBook = () => {
             <option value="Echangé">Echangé</option>
           </select>
         </div>
-
+        <br />
         <div className="form-group">
           <label>Description *</label>
           <textarea

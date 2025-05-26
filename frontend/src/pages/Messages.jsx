@@ -199,7 +199,8 @@ const Messages = ({ currentUser }) => {
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({
         behavior: 'smooth',
-        block: 'end'
+        block: 'nearest',
+        inline: 'start'
       });
     }, 100);
   };
@@ -448,7 +449,9 @@ const Messages = ({ currentUser }) => {
                               src={`http://localhost:5001${msg.image_url}`} 
                               alt="Image envoyée" 
                               className="message-image"
+                              onClick={() => window.open(`http://localhost:5001${msg.image_url}`, '_blank')}
                             />
+
                           ) : (
                             <p>{msg.content}</p>
                           )}

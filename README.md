@@ -1,14 +1,16 @@
 # BookSwap
 
-## Stack
-- **Frontend**: React
-- **Backend**: Node.js, Express, MySQL
+## Description
+BookSwap est une application web qui permet aux utilisateurs d’échanger des livres facilement.
+
+## Stack technique
+- **Frontend** : React  
+- **Backend** : Node.js  
+- **Base de données** : MySQL  
+- **Authentification** : JWT (JSON Web Token)
 
 ## Installation
-1. Cloner le dépôt :
-   ```sh
-   git clone https://github.com/GautierDERMONT/bookswap.git
-2. Installer les dépendances dans requirments.txt
 
-3. Se mettre dans le dossier | **backend**: npm start
-                             |**frontend** : npm run dev
+1. Cloner le dépôt :
+   ```bash
+   git clone https://github.com/GautierDERMONT/bookswap.git

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import './Profile.css';
 import BookCard from '../components/BookCard';
 
@@ -19,8 +20,14 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
   const [userBooks, setUserBooks] = useState([]);
+  const [bioWordCount, setBioWordCount] = useState(0);
   const [loadingBooks, setLoadingBooks] = useState(true);
   const [profileUser, setProfileUser] = useState(null);
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false
+  });
   const navigate = useNavigate();
   const { userId } = useParams();
   const location = useLocation();
@@ -47,6 +54,7 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
           setProfileUser(response.data);
           setFormData({
             username: response.data.username,
+            email: response.data.email,
             location: response.data.location || '',
             bio: response.data.bio || '',
             avatar: null,
@@ -62,6 +70,7 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
           });
           setFormData({
             username: response.data.username,
+            email: response.data.email,
             location: response.data.location || '',
             bio: response.data.bio || '',
             avatar: null,
@@ -129,11 +138,29 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
   };
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+
+      if (name === 'bio') {
+        const wordArray = value.trim().split(/\s+/).filter(Boolean);
+        const wordCount = wordArray.length;
+
+        if (wordCount > 50) {
+          setMessage({ text: 'La bio ne peut pas dépasser 50 mots.', type: 'error' });
+          return;
+        } else {
+          setMessage({ text: '', type: '' });
+        }
+
+        setBioWordCount(wordCount);
+      }
+
+
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
+
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
@@ -169,18 +196,27 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
     setMessage({ text: '', type: '' });
   };
 
+  const togglePasswordVisibility = (field) => {
+    setShowPasswords(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       setIsLoading(true);
       setMessage({ text: '', type: '' });
 
-      if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
-        throw new Error('Les nouveaux mots de passe ne correspondent pas');
-      }
+      if (formData.newPassword) {
+        if (formData.newPassword !== formData.confirmPassword) {
+          throw new Error('Les nouveaux mots de passe ne correspondent pas');
+        }
 
-      if (formData.newPassword && !formData.currentPassword) {
-        throw new Error('Le mot de passe actuel est requis pour changer le mot de passe');
+        if (!formData.currentPassword) {
+          throw new Error('Le mot de passe actuel est requis pour changer le mot de passe');
+        }
       }
 
       if (formData.deleteAvatar) {
@@ -209,8 +245,8 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
           username: formData.username,
           location: formData.location,
           bio: formData.bio,
-          currentPassword: formData.currentPassword,
-          newPassword: formData.newPassword
+          currentPassword: formData.newPassword ? formData.currentPassword : '',
+          newPassword: formData.newPassword || undefined
         },
         { 
           withCredentials: true,
@@ -320,7 +356,7 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
                 required
               />
             </div>
-
+            
             <div className="profile-form-group">
               <label>Localisation</label>
               <input
@@ -331,50 +367,82 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
               />
             </div>
 
-            <div className="profile-form-group">
+            <div className="profile-form-group profile-password-container1">
               <label>Mot de passe actuel</label>
-              <input
-                type="password"
-                name="currentPassword"
-                value={formData.currentPassword}
-                onChange={handleChange}
-                placeholder="Entrez votre mot de passe actuel"
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPasswords.current ? "text" : "password"}
+                  name="currentPassword"
+                  value={formData.currentPassword}
+                  onChange={handleChange}
+                  placeholder="Entrez votre mot de passe actuel"
+                />
+                <button
+                  type="button"
+                  className="profile-password-toggle"
+                  onClick={() => togglePasswordVisibility('current')}
+                >
+                  {showPasswords.current ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
             </div>
 
-            <div className="profile-form-group">
+            <div className="profile-form-group profile-password-container2">
               <label>Nouveau mot de passe</label>
-              <input
-                type="password"
-                name="newPassword"
-                value={formData.newPassword}
-                onChange={handleChange}
-                placeholder="Entrez un nouveau mot de passe"
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPasswords.new ? "text" : "password"}
+                  name="newPassword"
+                  value={formData.newPassword}
+                  onChange={handleChange}
+                  placeholder="Entrez un nouveau mot de passe"
+                />
+                <button
+                  type="button"
+                  className="profile-password-toggle"
+                  onClick={() => togglePasswordVisibility('new')}
+                >
+                  {showPasswords.new ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
             </div>
 
-            <div className="profile-form-group">
+            <div className="profile-form-group profile-password-container">
               <label>Confirmer le nouveau mot de passe</label>
-              <input
-                type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                placeholder="Confirmez le nouveau mot de passe"
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPasswords.confirm ? "text" : "password"}
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  placeholder="Confirmez le nouveau mot de passe"
+                />
+                <button
+                  type="button"
+                  className="profile-password-toggle"
+                  onClick={() => togglePasswordVisibility('confirm')}
+                >
+                  {showPasswords.confirm ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
             </div>
           </div>
 
           <div className="profile-form-bio">
             <div className="profile-form-group">
-              <label>Bio</label>
               <textarea
                 name="bio"
                 value={formData.bio}
                 onChange={handleChange}
                 rows="4"
+                placeholder="Parlez un peu de vous (50 mots max)"
               />
+              <div className="bio-word-count">
+                {bioWordCount} / 50 mots
+              </div>
             </div>
+
+
 
             {message.text && (
               <div className={`profile-message ${message.type}`}>
@@ -382,18 +450,20 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
               </div>
             )}
 
-            <button type="submit" disabled={isLoading} className="profile-submit-button">
-              {isLoading ? 'Enregistrement...' : 'Enregistrer les modifications'}
-            </button>
+            <div className="profile-buttons-container">
+              <button type="submit" disabled={isLoading} className="profile-submit-button">
+                {isLoading ? 'Enregistrement...' : 'Enregistrer les modifications'}
+              </button>
 
-            <button 
-              type="button" 
-              onClick={handleDeleteAccount} 
-              disabled={isLoading} 
-              className="profile-delete-account-button"
-            >
-              {isLoading ? 'Suppression en cours...' : 'Supprimer mon compte'}
-            </button>
+              <button 
+                type="button" 
+                onClick={handleDeleteAccount} 
+                disabled={isLoading} 
+                className="profile-delete-account-button"
+              >
+                {isLoading ? 'Suppression en cours...' : 'Supprimer mon compte'}
+              </button>
+            </div>
           </div>
         </form>
       ) : (
@@ -413,7 +483,7 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
           </div>
           <div className="profile-right">
             <div className="profile-public-details">
-              <h2>{formData.username}</h2>
+              {formData.email && <p><strong>Email:</strong> {formData.email}</p>}
               {formData.location && <p><strong>Localisation:</strong> {formData.location}</p>}
               {formData.bio && (
                 <div className="profile-bio">
@@ -445,13 +515,17 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
                 />
                 {!isPublicProfile && (
                   <div className="book-hover-actions">
+                    <br />
                     <button 
                       className="edit-book-button"
                       onClick={(e) => {
                         e.stopPropagation();
                         navigate(`/books/${book.id}/edit`);
+                        
                       }}
+                      
                     >
+                      
                       ✏️ Modifier
                     </button>
                   </div>

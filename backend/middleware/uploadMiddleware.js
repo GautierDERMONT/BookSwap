@@ -2,12 +2,13 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Créer le dossier uploads s'il n'existe pas
+// Création du dossier 'uploads' si celui-ci n'existe pas, pour stocker les fichiers uploadés
 const uploadDir = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+// Configuration du stockage des fichiers uploadés avec multer : destination et nommage des fichiers
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
@@ -17,6 +18,7 @@ const storage = multer.diskStorage({
   }
 });
 
+// Filtrage des fichiers pour n'accepter que les images (vérification du type MIME)
 const fileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith('image/')) {
     cb(null, true);
@@ -25,12 +27,13 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
+// Initialisation de multer avec la configuration de stockage, filtre et limites sur la taille et nombre de fichiers
 const upload = multer({ 
   storage,
   fileFilter,
   limits: { 
-    fileSize: 5 * 1024 * 1024, // 5MB
-    files: 3 // Maximum 3 fichiers
+    fileSize: 5 * 1024 * 1024, // Taille max par fichier : 5 Mo
+    files: 3 // Nombre max de fichiers uploadés simultanément : 3
   }
 });
 
