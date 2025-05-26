@@ -61,21 +61,7 @@
   cursor: pointer;
 }
 
-.header-filter-button {
-  padding: 10px 20px;
-  background-color: #4285f4;
-  color: white;
-  border: none;
-  border-radius: 24px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  flex-shrink: 0;
-}
 
-.header-filter-button:hover {
-  background-color: #3367d6;
-}
 
 .header-user-actions {
   display: flex;
@@ -89,13 +75,13 @@
   border-radius: 4px;
   font-size: 14px;
   cursor: pointer;
-  border: 1px solid #4285f4;
+  border: 1px solid #4e9a5e;
   background-color: white;
-  color: #4285f4;
+  color: #4e9a5e;
 }
 
 .header-auth-button.header-primary {
-  background-color: #4285f4;
+  background-color:  #0c6546;
   color: white;
 }
 
@@ -105,16 +91,26 @@
   gap: 15px;
 }
 
+.header-filter-button,
 .header-menu-button {
   display: flex;
   align-items: center;
-  padding: 8px 12px;
+  padding: 8px 18px;
   background-color: #f1f3f4;
-  border-radius: 16px;
+  color: rgb(20, 16, 16);
+  border: 2px solid #0c6546;       /* Bordure verte */
+  border-radius: 24px;
   font-size: 14px;
   cursor: pointer;
-  border: none;
+  transition: border-color 0.3s ease, background-color 0.3s ease;
+  flex-shrink: 0;
 }
+
+.header-filter-button:hover,
+.header-menu-button:hover {
+  border-color: #4e9a5e;
+}
+
 
 .header-menu-icon {
   background: none;
@@ -176,11 +172,13 @@
   background: white;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  width: 180px;
+  width: 200px;
   overflow: hidden;
   z-index: 100;
   animation: fadeIn 0.2s ease-out;
   border: 1px solid #eee;
+  font-family: 'Montserrat', 'Segoe UI', sans-serif;
+
 }
 
 @keyframes fadeIn {
@@ -201,12 +199,13 @@
   align-items: center;
   gap: 12px;
   font-size: 14px;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
   color: #333;
 }
 
 .header-dropdown-item:hover {
   background-color: #f8f8f8;
+  color: #0c6546;
 }
 
 .dropdown-icon {
@@ -263,4 +262,75 @@
 
 .suggestion-item:hover {
   background-color: #f5f5f5;
+}
+
+/* ==================== */
+/* RESPONSIVE MOBILE */
+/* ==================== */
+
+@media (max-width: 768px) {
+  .header-app {
+    height: auto;
+    padding: 10px 0;
+    position: relative;
+  }
+
+  .header-top {
+    flex-wrap: wrap;
+    padding: 0 15px;
+    gap: 10px;
+    height: auto;
+  }
+
+  .header-logo {
+    height: 80px;
+    order: 1;
+  }
+
+  .header-search-container {
+    order: 3;
+    width: 100%;
+    min-width: 100%;
+    margin-top: 10px;
+  }
+
+  .header-user-actions {
+    order: 2;
+    margin-left: 0;
+    margin-right: auto;
+    padding: 5px 0;
+  }
+
+  .header-auth-button {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .header-filter-button,
+  .header-menu-button {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .header-profile-info {
+    padding: 2px 5px;
+  }
+
+  .header-avatar-wrapper,
+  .header-profile-avatar,
+  .header-default-avatar {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-logo {
+    height: 70px;
+  }
+
+  .header-search-bar input {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
 }

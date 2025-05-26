@@ -42,7 +42,7 @@ export default function FavoritesPage({ currentUser }) {
               isAuthenticated={true}
               currentUser={currentUser}
               onRequireLogin={() => {}}
-              hideOwnerBadge={true}
+              hideOwnerBadge={false}
             />
           ))
         )}
