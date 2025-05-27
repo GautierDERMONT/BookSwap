@@ -2,8 +2,22 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import api from '../services/api';
+import { 
+  FaHeart, 
+  FaRegHeart, 
+  FaEdit, 
+  FaTrash, 
+  FaEnvelope, 
+  FaUser, 
+  FaBook, 
+  FaStar, 
+  FaMapMarkerAlt, 
+  FaCalendarAlt,
+  FaExchangeAlt,
+  FaCheckCircle,
+  FaClock
+} from 'react-icons/fa';
 import './BookDetails.css';
-import { FiMapPin } from 'react-icons/fi';
 
 const API_URL = 'http://localhost:5001';
 
@@ -21,7 +35,7 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
   const [modalMessage, setModalMessage] = useState('');
   const gridRef = useRef(null);
   const [gridHeight, setGridHeight] = useState(null);
-  
+
   const userId = currentUser?.userId || currentUser?.id;
   const storageKey = userId && book?.id ? `favorite-${userId}-${book.id}` : null;
   const isAuthenticated = !!currentUser;
@@ -71,7 +85,7 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
 
   const handleFavoriteClick = async (e) => {
     e.stopPropagation();
-    
+
     executeAfterAuth(async () => {
       const newFavorite = !isFavorite;
       setIsFavorite(newFavorite);
@@ -106,9 +120,9 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
 
   const handleModalClick = (e) => {
     if (
-      e.target.classList.contains('book-details-nav-arrow') ||
-      e.target.closest('.book-details-nav-arrow') ||
-      e.target.classList.contains('book-details-zoomed-image')
+      e.target.classList.contains('nav-arrow') ||
+      e.target.closest('.nav-arrow') ||
+      e.target.classList.contains('zoomed-image')
     )
       return;
     closeZoom();
@@ -170,123 +184,145 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
 
   const images = book.images;
   const isOwner = currentUser && book && (currentUser.userId === book.users_id || currentUser.id === book.users_id);
-  
+
   return (
     <div className="book-details-wrapper">
-      <div className="book-details-page">
-        <div className="book-details-images">
-          <div className="book-details-image-grid" ref={gridRef}>
-            <div className="book-details-main-image">
-              {images[0] ? (
-                <img
-                  src={images[0]}
-                  alt={book.title}
-                  onClick={() => openZoom(0)}
-                  onError={(e) => (e.target.src = `${API_URL}/placeholder.jpg`)}
-                />
-              ) : (
-                <div className="book-details-empty-image">Pas d'image disponible</div>
-              )}
-            </div>
-            {[1, 2].map((index) => (
-              <div className="book-details-thumbnail-frame" key={index}>
-                {images[index] ? (
+      <div className="book-details-container">
+        <div className="book-details-page">
+          <div className="book-details-images">
+            <div className="book-details-image-grid" ref={gridRef}>
+              <div className="book-details-main-image">
+                {images[0] ? (
                   <img
-                    src={images[index]}
-                    alt={`${book.title} miniature ${index}`}
-                    className="book-details-thumbnail"
-                    onClick={() => openZoom(index)}
-                    onError={(e) => (e.target.src = `${API_URL}/placeholder-thumbnail.jpg`)}
+                    src={images[0]}
+                    alt={book.title}
+                    onClick={() => openZoom(0)}
+                    onError={(e) => (e.target.src = `${API_URL}/placeholder.jpg`)}
                   />
                 ) : (
-                  <div className="book-details-empty-image">pas d'autre image</div>
+                  <div className="book-details-empty-image">Pas d'image disponible</div>
                 )}
               </div>
-            ))}
+              {[1, 2].map((index) => (
+                <div className="book-details-thumbnail-frame" key={index}>
+                  {images[index] ? (
+                    <img
+                      src={images[index]}
+                      alt={`${book.title} miniature ${index}`}
+                      className="book-details-thumbnail"
+                      onClick={() => openZoom(index)}
+                      onError={(e) => (e.target.src = `${API_URL}/placeholder-thumbnail.jpg`)}
+                    />
+                  ) : (
+                    <div className="book-details-empty-image">pas d'autre image</div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <button
+              className="favorite-button"
+              onClick={handleFavoriteClick}
+              aria-label={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+            >
+              {isFavorite ? <FaHeart color="#f44336" /> : <FaRegHeart />}
+            </button>
           </div>
-          <button
-            className="book-details-favorite-button"
-            onClick={handleFavoriteClick}
-            aria-label="Ajouter aux favoris"
-          >
-            {isFavorite ? '❤️' : '🤍'}
-          </button>
-        </div>
 
-        <div
-          className="book-details-info"
-          style={gridHeight ? { height: gridHeight } : undefined}
-        >
-          <h1>{book.title}</h1>
-          <h2>{book.author || 'Auteur inconnu'}</h2>
+          <div className="book-details-info">
+            <div className="book-details-title-section">
+              <h1 className="book-details-title">{book.title}</h1>
+              <h2 className="book-details-author">{book.author || 'Auteur inconnu'}</h2>
+            </div>
+            
             <div className="book-details-meta">
-              <p className="book-details-publisher-info">
-                <strong>Proposé par :</strong>
-                  <Link 
-                      to={`/user/${book.user.id}`} 
-                      className="book-details-publisher-link"
-                      onClick={(e) => {
-                        if (currentUser && (currentUser.id === book.user.id || currentUser.userId === book.user.id)) {
-                          e.preventDefault();
-                          navigate('/profile');
-                        }
+              <p>
+                <strong><FaUser className="meta-icon" /> Proposé par :</strong>
+                <Link 
+                  to={`/user/${book.user.id}`} 
+                  className="book-details-publisher-link"
+                  onClick={(e) => {
+                    if (currentUser && (currentUser.id === book.user.id || currentUser.userId === book.user.id)) {
+                      e.preventDefault();
+                      navigate('/profile');
+                    }
+                  }}
+                >
+                  {book.avatar ? (
+                    <img 
+                      src={`${API_URL}${book.avatar}`}
+                      alt={`Avatar de ${book.username}`}
+                      className="book-details-avatar-icon"
+                      onError={(e) => {
+                        e.target.src = `${API_URL}/default-avatar.png`;
                       }}
-                    >
-                      {book.avatar ? (
-                        <img 
-                          src={`${API_URL}${book.avatar}`}
-                          alt={`Avatar de ${book.username}`}
-                          className="book-details-avatar-icon"
-                          onError={(e) => {
-                            e.target.src = `${API_URL}/default-avatar.png`;
-                            console.error("Erreur de chargement de l'avatar:", book.avatar);
-                          }}
-                        />
-                      ) : (
-                        <div className="book-details-default-avatar">
-                          {book.username?.charAt(0).toUpperCase() || 'A'}
-                        </div>
-                      )}
-                      <span>{book.username || 'Anonyme'}</span>
-                    </Link>
+                    />
+                  ) : (
+                    <div className="book-details-default-avatar">
+                      {book.username?.charAt(0).toUpperCase() || 'A'}
+                    </div>
+                  )}
+                  <span>{book.username || 'Anonyme'}</span>
+                </Link>
               </p>
-              <p><strong>Catégorie :</strong> {book.category || 'Non spécifié'}</p>
-
-                  <p> <strong>État :</strong> 
-                    <span className="book-details-condition">
-                      {book.condition || 'Non spécifié'}
-                  </span></p>
-
-              <p>  <strong>Localisation :</strong> 
-                  <span className="book-details-location">
-                    <FiMapPin /> {book.location || 'Non spécifié'}
-                  </span></p>
-              <p> <strong>Disponibilité :</strong> 
-                    <span className={`book-details-availability-${book.availability?.toLowerCase()}`}>
-                      {book.availability || 'Non spécifié'}
-                    </span>
+              
+              <p>
+                <strong><FaBook className="meta-icon" /> Catégorie :</strong> 
+                {book.category || 'Non spécifié'}
+              </p>
+              
+              <p>
+                <strong><FaStar className="meta-icon" /> État :</strong> 
+                {book.condition || 'Non spécifié'}
+              </p>
+              
+              <p>
+                <strong><FaMapMarkerAlt className="meta-icon" /> Localisation :</strong> 
+                {book.location || 'Non spécifié'}
+              </p>
+              
+              <p>
+                <strong>
+                  {book.availability === 'disponible' ? (
+                    <FaCheckCircle className="meta-icon" style={{ color: 'var(--secondary-color)' }} />
+                  ) : book.availability === 'réservé' ? (
+                    <FaClock className="meta-icon" style={{ color: '#FF9800' }} />
+                  ) : (
+                    <FaExchangeAlt className="meta-icon" style={{ color: '#F44336' }} />
+                  )}
+                  Disponibilité :
+                </strong>
+                <span className={`book-details-availability-${book.availability?.toLowerCase()}`}>
+                  {book.availability || 'Non spécifié'}
+                </span>
+              </p>
+              
+              <p>
+                <strong><FaCalendarAlt className="meta-icon" /> Publié le :</strong> 
+                {new Date(book.created_at).toLocaleDateString('fr-FR')}
               </p>
             </div>
-          <div className="book-details-description">
-            <h3>Description</h3>
-            <p>{book.description || 'Aucune description disponible.'}</p>
-          </div>
-          
-          <div className="book-details-actions">
-            {isOwner ? (
-              <>
-                <button className="book-details-edit-button" onClick={handleEditClick}>
-                  Modifier le livre
+
+            <div className="book-details-description">
+              <h3>Description</h3>
+              <p>{book.description || 'Aucune description disponible.'}</p>
+            </div>
+
+            <div className="book-details-actions">
+              {isOwner ? (
+                <>
+                  <button className="book-details-edit-button" onClick={handleEditClick}>
+                    <FaEdit /> Modifier
+                  </button>
+                  <button className="book-details-delete-button" onClick={handleDeleteClick}>
+                    <FaTrash /> Supprimer
+                  </button>
+                </>
+              ) : (
+                <button className="book-details-message-button" onClick={handleMessageClick}>
+                  <FaEnvelope /> Envoyer un message
                 </button>
-                <button className="book-details-delete-button" onClick={handleDeleteClick}>
-                  Supprimer
-                </button>
-              </>
-            ) : (
-              <button className="book-details-message-button" onClick={handleMessageClick}>
-                Envoyer un message
-              </button>
-            )}
+              )}
+            </div>
           </div>
         </div>
 

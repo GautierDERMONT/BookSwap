@@ -1,5 +1,9 @@
+bookswap/
+npm install lucide-react
 
-backend:
+
+
+bookswap/backend:
 
 npm install
 npm install express pg jsonwebtoken bcryptjs cors multer socket.io
@@ -12,10 +16,12 @@ npm install dotenv
 npm install axios
 npm install cookie-parser
 npm install express-fileupload
+npm install compression
 
 
 
-frontend:
+
+bookswap/frontend:
 
 npm install
 npm install react-router-dom axios tailwindcss socket.io-client

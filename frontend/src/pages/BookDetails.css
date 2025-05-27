@@ -18,31 +18,6 @@
   --max-width-info: 600px;
 }
 
-
-.book-details-favorite-button {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: white;
-    border: none;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    z-index: 2;
-}
-
-.book-details-favorite-button:hover {
-    background: #f8f8f8;
-    transform: scale(1.1);
-}
-
 .book-details-wrapper {
   min-height: 100vh;
   display: flex;
@@ -55,7 +30,7 @@
 .book-details-page {
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: stretch; /* Changé de flex-start à stretch */
   gap: var(--gap-main);
   max-width: var(--max-width-page);
   margin: 0 auto;
@@ -66,6 +41,8 @@
   flex: 1;
   position: relative;
   max-width: var(--max-width-images);
+  height: 100%; /* Nouvelle propriété */
+  display: flex; /* Nouvelle propriété */
 }
 
 .book-details-image-grid {
@@ -73,9 +50,9 @@
   grid-template-columns: 2fr 1fr;
   grid-template-rows: 1fr 1fr;
   gap: 8px;
+  height: 100%;
+  min-height: 500px; /* Correspond à min-height de .book-details-info */
   width: 100%;
-  aspect-ratio: 1 / 1;
-  max-height: 402px;
   border-radius: var(--border-radius);
   overflow: hidden;
   background: #f8f8f8;
@@ -153,28 +130,88 @@
   box-shadow: var(--box-shadow);
   display: flex;
   flex-direction: column;
+  min-height: 500px;
+  gap: 20px;
+}
+
+.book-details-title-section {
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--primary);
+  margin-bottom: 15px;
+}
+
+.book-details-title-section h1 {
+  margin-bottom: 5px;
+  color: var(--text-color);
+  font-size: 2rem;
+}
+
+.book-details-title-section h2 {
+  margin-top: 0;
+  color: #666;
+  font-weight: 400;
+  font-size: 1.2rem;
 }
 
 .book-details-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
   margin-bottom: 0;
 }
 
 .book-details-meta p {
-  margin: 0;
+  margin: 5px 0;
+  padding: 8px 0;
+  border-bottom: 1px dashed #eee;
   display: flex;
   align-items: center;
 }
 
 .book-details-meta strong {
-  min-width: 80px;
+  min-width: 20px;
   display: inline-block;
   color: var(--text-color);
+  font-weight: 600;
 }
 
 .book-details-description {
   flex: 1;
+  min-height: 60px;
+  max-height: 120px; /* Hauteur maximale équivalente à environ 5 lignes */
   overflow-y: auto;
-  padding-right: 8px;
+  padding: 15px;
+  background: #f9f9f9;
+  border-radius: var(--border-radius);
+  border-left: 4px solid var(--primary);
+  margin-top: 10px;
+  line-height: 1.5;
+}
+
+.book-details-description h3 {
+  margin-top: 0;
+  color: var(--primary);
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+/* Style personnalisé pour la scrollbar */
+.book-details-description::-webkit-scrollbar {
+  width: 6px;
+}
+
+.book-details-description::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.book-details-description::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 3px;
+}
+
+.book-details-description::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-hover);
 }
 
 .book-details-description p {
@@ -184,65 +221,47 @@
   word-break: break-word;
   white-space: pre-wrap;
   margin: 0;
+  padding-right: 5px; /* Pour éviter que le texte touche la scrollbar */
 }
 
-.book-details-condition {
-  background: #f5f5f5;
+
+.book-details-condition,
+.book-details-location,
+.book-details-availability-disponible,
+.book-details-availability-réservé,
+.book-details-availability-echangé {
   padding: 6px 12px;
   border-radius: 16px;
   font-size: 14px;
   display: inline-flex;
   align-items: center;
-  color: var(--text-color);
   margin-left: 8px;
+  gap: 6px;
+}
+
+.book-details-condition {
+  background: #f5f5f5;
+  color: var(--text-color);
 }
 
 .book-details-location {
   background: rgba(12, 101, 70, 0.1);
   color: var(--primary);
-  padding: 6px 12px;
-  border-radius: 16px;
-  font-size: 14px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: 8px;
 }
 
 .book-details-availability-disponible {
   color: var(--secondary-color);
   background-color: rgba(78, 154, 94, 0.1);
-  padding: 6px 12px;
-  border-radius: 16px;
-  font-size: 14px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: 8px;
 }
 
 .book-details-availability-réservé {
   color: #FF9800;
   background-color: rgba(255, 152, 0, 0.1);
-  padding: 6px 12px;
-  border-radius: 16px;
-  font-size: 14px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: 8px;
 }
 
 .book-details-availability-echangé {
   color: #F44336;
   background-color: rgba(244, 67, 54, 0.1);
-  padding: 6px 12px;
-  border-radius: 16px;
-  font-size: 14px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: 8px;
 }
 
 .book-details-actions {
@@ -263,6 +282,10 @@
   transition: all 0.3s;
   flex: 1;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .book-details-edit-button {
@@ -399,23 +422,31 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+
+.meta-icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  color: var(--primary);
+}
+
 @media (max-width: 1000px) {
   .book-details-page {
     flex-direction: column;
     align-items: center;
     gap: var(--gap-mobile);
   }
-  
+
   .book-details-images,
   .book-details-info {
     width: 100%;
     max-width: 100%;
   }
-  
+
   .book-details-image-grid {
     max-height: 80vw;
   }
-  
+
   .book-details-actions {
     flex-direction: column;
   }
@@ -425,20 +456,24 @@
   .book-details-wrapper {
     padding: 10px;
   }
-  
+
   .book-details-info {
     padding: 20px 15px;
   }
-  
+
+  .book-details-meta {
+    grid-template-columns: 1fr;
+  }
+
   .book-details-meta p {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .book-details-meta strong {
     min-width: auto;
   }
-  
+
   .book-details-condition,
   .book-details-location,
   .book-details-availability-disponible,
@@ -446,5 +481,19 @@
   .book-details-availability-echangé {
     margin-left: 0;
     margin-top: 5px;
+  }
+
+  .book-details-description {
+    padding: 10px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .book-details-image-grid {
+    max-height: 550px;
+  }
+
+  .book-details-info {
+    min-height: 550px;
   }
 }

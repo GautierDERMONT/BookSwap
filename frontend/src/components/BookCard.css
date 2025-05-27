@@ -107,7 +107,7 @@
     position: absolute;
     top: 10px;
     right: 10px;
-    background: white;
+    background: var(--background-favorite, white);
     border: none;
     border-radius: 50%;
     width: 36px;
@@ -123,7 +123,7 @@
 }
 
 .favorite-button:hover {
-    background: #f8f8f8;
+    background: var(--background-favorite-hover, #f8f8f8);
     transform: scale(1.1);
 }
 

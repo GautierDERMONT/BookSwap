@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './BookCard.css';
+import { FaHeart, FaRegHeart } from 'react-icons/fa';
 
 export default function BookCard({ book, isAuthenticated, currentUser, onRequireLogin, hideOwnerBadge }) {
   const [isFavorite, setIsFavorite] = useState(false);
@@ -86,9 +87,13 @@ export default function BookCard({ book, isAuthenticated, currentUser, onRequire
               e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTk5Ij5FcnJldXI8L3RleHQ+PC9zdmc+';
             }}
           />
-          <button className="favorite-button" onClick={handleFavoriteClick}>
-            {isFavorite ? '❤️' : '🤍'}
-          </button>
+          <button 
+              className="favorite-button" 
+              onClick={handleFavoriteClick}
+              aria-label={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+            >
+              {isFavorite ? <FaHeart color="#f44336" /> : <FaRegHeart />}
+            </button>
         </div>
         <div className="book-info">
           <h3 className="book-title">
