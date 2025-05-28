@@ -59,9 +59,7 @@
      - `bookswap/backend/config/db.js`
    - Importer le fichier SQL pour initialiser la base :
 
-     ```sql
-     bookswap/bookswap.sql
-     ```
+    [📥 Télécharger la BDD](/bookswap.sql)
 
 ---
 
