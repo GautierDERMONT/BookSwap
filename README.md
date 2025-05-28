@@ -57,7 +57,7 @@
    - Vérifiez les fichiers de configuration :
      - `bookswap/backend/.env`
      - `bookswap/backend/config/db.js`
-   - Importer le fichier SQL pour initialiser la base :
+   - Créer une base de donnée "bookswap" et importer le fichier SQL pour initialiser la   base :
 
     [📥 Télécharger la BDD](/bookswap.sql)
 
