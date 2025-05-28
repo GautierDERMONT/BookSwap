@@ -249,6 +249,8 @@ export default function Books({ isAuthenticated, currentUser, onOpenLogin }) {
               isAuthenticated={isAuthenticated}
               currentUser={currentUser}
               onRequireLogin={onOpenLogin}
+              hideOwnerBadge={false} // ou une prop calculée
+
             />
           ))
         ) : (

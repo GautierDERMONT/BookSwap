@@ -159,67 +159,67 @@ function App() {
       />
 
       <main className="app-content">
-          <Routes>
-            <Route path="/" element={
-              <HomePage
-                isAuthenticated={isAuthenticated}
-                currentUser={currentUser}
-                onOpenLogin={() => setActiveModal('login')}
-              />
-            } />
-            <Route path="/books" element={
-              <BooksPage
-                isAuthenticated={isAuthenticated}
-                currentUser={currentUser}
-                onOpenLogin={() => setActiveModal('login')}
-              />
-            } />
-            <Route path="/books/:id" element={
-              <BookDetails
-                currentUser={currentUser}
-                executeAfterAuth={executeAfterAuth}
-              />
-            } />
-            <Route path="/books/:id/edit" element={
-              isAuthenticated ? <EditBook /> : <Navigate to="/" replace />
-            } />
-            <Route path="/add-book" element={
-              isAuthenticated ? <AddBook /> : <Navigate to="/" replace />
-            } />
-            <Route path="/profile" element={
-              isAuthenticated ?
-                <Profile currentUser={currentUser} /> :
-                <Navigate to="/" state={{ redirectAfterLogin: '/profile' }} replace />
-            } />
-            <Route path="/messages" element={
-              isAuthenticated ?
-                <Messages currentUser={currentUser} /> :
-                <Navigate to="/" state={{ redirectAfterLogin: '/messages' }} replace />
-            } />
-            <Route path="/messages/:conversationId" element={
-              isAuthenticated ?
-                <Messages currentUser={currentUser} /> :
-                <Navigate to="/" state={{ redirectAfterLogin: `/messages/${params.conversationId}` }} replace />
-            } />
-            <Route path="/search" element={
-              <SearchResults
-                isAuthenticated={isAuthenticated}
-                currentUser={currentUser}
-                executeAfterAuth={executeAfterAuth}
-              />
-            } />
-            <Route path="/user/:userId" element={
-              <Profile
-                currentUser={currentUser}
-                isPublicProfile={true}
-              />
-            } />
-            <Route path="/favorites" element={
-              isAuthenticated ?
-                <Favorites currentUser={currentUser} /> :
-                <Navigate to="/" state={{ redirectAfterLogin: '/favorites' }} replace />
-            } />
-          </Routes>
+        <Routes>
+          <Route path="/" element={
+            <HomePage
+              isAuthenticated={isAuthenticated}
+              currentUser={currentUser}
+              onOpenLogin={() => setActiveModal('login')}
+            />
+          } />
+          <Route path="/books" element={
+            <BooksPage
+              isAuthenticated={isAuthenticated}
+              currentUser={currentUser}
+              onOpenLogin={() => setActiveModal('login')}
+            />
+          } />
+          <Route path="/books/:id" element={
+            <BookDetails
+              currentUser={currentUser}
+              executeAfterAuth={executeAfterAuth}
+            />
+          } />
+          <Route path="/books/:id/edit" element={
+            isAuthenticated ? <EditBook /> : <Navigate to="/" replace />
+          } />
+          <Route path="/add-book" element={
+            isAuthenticated ? <AddBook /> : <Navigate to="/" replace />
+          } />
+          <Route path="/profile" element={
+            isAuthenticated ?
+              <Profile currentUser={currentUser} /> :
+              <Navigate to="/" state={{ redirectAfterLogin: '/profile' }} replace />
+          } />
+          <Route path="/messages" element={
+            isAuthenticated ?
+              <Messages currentUser={currentUser} /> :
+              <Navigate to="/" state={{ redirectAfterLogin: '/messages' }} replace />
+          } />
+          <Route path="/messages/:conversationId" element={
+            isAuthenticated ?
+              <Messages currentUser={currentUser} /> :
+              <Navigate to="/" state={{ redirectAfterLogin: `/messages/${params.conversationId}` }} replace />
+          } />
+          <Route path="/search" element={
+            <SearchResults
+              isAuthenticated={isAuthenticated}
+              currentUser={currentUser}
+              executeAfterAuth={executeAfterAuth}
+            />
+          } />
+          <Route path="/user/:userId" element={
+            <Profile
+              currentUser={currentUser}
+              isPublicProfile={true}
+            />
+          } />
+          <Route path="/favorites" element={
+            isAuthenticated ?
+              <Favorites currentUser={currentUser} /> :
+              <Navigate to="/" state={{ redirectAfterLogin: '/favorites' }} replace />
+          } />
+        </Routes>
       </main>
 
       <Footer />

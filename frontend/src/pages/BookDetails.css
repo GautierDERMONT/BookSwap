@@ -57,7 +57,21 @@
   overflow: hidden;
   background: #f8f8f8;
   position: relative;
+  border: 2px dashed green;
+  padding: 4px; /* Ajoute de l’espace intérieur entre la bordure et le contenu */
+  box-sizing: border-box; /* Assure que padding n'affecte pas la taille globale */
+
 }
+
+.book-details-meta-value {
+  margin-left: auto;
+  font-weight: 500;
+  color: var(--primary);
+  padding-left: 10px;
+  text-align: right;
+  display: inline-block;
+}
+
 
 .book-details-main-image {
   grid-column: 1 / 2;
@@ -235,7 +249,7 @@
   font-size: 14px;
   display: inline-flex;
   align-items: center;
-  margin-left: 8px;
+  margin-left: auto;
   gap: 6px;
 }
 

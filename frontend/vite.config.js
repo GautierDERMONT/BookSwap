@@ -1,19 +1,29 @@
 // frontend/vite.config.js
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import path from 'path' // Ajoutez cette ligne
+import path from 'path'
+import viteImagemin from 'vite-plugin-imagemin' // Ajoutez cette ligne
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    viteImagemin({ // Ajouter ce plugin
+      gifsicle: { optimizationLevel: 3 },
+      mozjpeg: { quality: 80 },
+      pngquant: { quality: [0.8, 0.9] },
+      svgo: {
+        plugins: [{ removeViewBox: false }]
+      }
+    })
+  ],
   server: {
-    hmr: false, // Désactive le HMR si tu n'en as pas besoin
-    open: true, // Ouvre automatiquement dans le navigateur
-    cors: true, // Permet les requêtes cross-origin
+    hmr: false,
+    open: true,
+    cors: true,
   },
   optimizeDeps: {
-    include: ['react', 'react-dom'], // Optimisation des dépendances
+    include: ['react', 'react-dom'],
   },
-  
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

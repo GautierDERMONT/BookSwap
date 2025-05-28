@@ -1,6 +1,6 @@
 bookswap/
 npm install lucide-react
-
+npm install vite-plugin-imagemin --save-dev
 
 
 bookswap/backend:

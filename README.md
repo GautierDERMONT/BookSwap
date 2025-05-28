@@ -37,16 +37,14 @@
    L’un dans le dossier `frontend`, l’autre dans `backend` :
 
    ```bash
-   cd bookswap/frontend
+   cd frontend
    ```
 
    ```bash
-   cd bookswap/backend
+   cd backend
    ```
 
-3. **Installer les dépendances** dans chaque terminal :  
-   (Les dépendances sont définies dans les fichiers `package.json`, pas `requirement.txt`)
-
+3. **Installer les dépendances** dans les deux terminaux :  
    Dans chaque terminal :
 
    ```bash
@@ -115,11 +113,16 @@
 - **Profil utilisateur (2/2)**  
   ![Page Profile2](/screenshots/Profile2.png)
 
-- **Favoris (2/2)**  
+- **Favoris**  
 ![Page Favoris](/screenshots/favorites.png)
+
+- **Livre**  
+![Page détails du livre](/screenshots/bookdetails.png)
 
 - **Ajout d’un livre**  
   ![Page Ajout](/screenshots/addbook.png)
+
+
 
 - **Messagerie**  
   ![Page messagerie](/screenshots/messagerie.png)
@@ -132,3 +135,4 @@
 
 - Gautier DERMONT  
 - Mennan SELVARUBAN  
+- Zunaid MOUGAIDINESSAIB

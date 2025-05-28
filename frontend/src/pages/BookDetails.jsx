@@ -36,6 +36,13 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
   const gridRef = useRef(null);
   const [gridHeight, setGridHeight] = useState(null);
 
+  useEffect(() => {
+    window.scrollBy({
+      top: window.innerHeight / 3,
+      behavior: 'smooth'
+    });
+  }, []);
+
   const userId = currentUser?.userId || currentUser?.id;
   const storageKey = userId && book?.id ? `favorite-${userId}-${book.id}` : null;
   const isAuthenticated = !!currentUser;
@@ -236,50 +243,57 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
             
             <div className="book-details-meta">
               <p>
-                <strong><FaUser className="meta-icon" /> Proposé par :</strong>
-                <Link 
-                  to={`/user/${book.user.id}`} 
-                  className="book-details-publisher-link"
-                  onClick={(e) => {
-                    if (currentUser && (currentUser.id === book.user.id || currentUser.userId === book.user.id)) {
-                      e.preventDefault();
-                      navigate('/profile');
-                    }
-                  }}
-                >
-                  {book.avatar ? (
-                    <img 
-                      src={`${API_URL}${book.avatar}`}
-                      alt={`Avatar de ${book.username}`}
-                      className="book-details-avatar-icon"
-                      onError={(e) => {
-                        e.target.src = `${API_URL}/default-avatar.png`;
-                      }}
-                    />
-                  ) : (
-                    <div className="book-details-default-avatar">
-                      {book.username?.charAt(0).toUpperCase() || 'A'}
-                    </div>
-                  )}
-                  <span>{book.username || 'Anonyme'}</span>
-                </Link>
+                <strong><FaUser className="meta-icon" />Proposé par</strong>
+                <span className="book-details-meta-value">
+                  <Link 
+                    to={`/user/${book.user.id}`} 
+                    className="book-details-publisher-link"
+                    onClick={(e) => {
+                      if (currentUser && (currentUser.id === book.user.id || currentUser.userId === book.user.id)) {
+                        e.preventDefault();
+                        navigate('/profile');
+                      }
+                    }}
+                  >
+                    {book.avatar ? (
+                      <img 
+                        src={`${API_URL}${book.avatar}`}
+                        alt={`Avatar de ${book.username}`}
+                        className="book-details-avatar-icon"
+                        onError={(e) => {
+                          e.target.src = `${API_URL}/default-avatar.png`;
+                        }}
+                      />
+                    ) : (
+                      <div className="book-details-default-avatar">
+                        {book.username?.charAt(0).toUpperCase() || 'A'}
+                      </div>
+                    )}
+                    <span>{book.username || 'Anonyme'}</span>
+                  </Link>
+                </span>
               </p>
               
               <p>
-                <strong><FaBook className="meta-icon" /> Catégorie :</strong> 
-                {book.category || 'Non spécifié'}
+                <strong><FaBook className="meta-icon" />Catégorie</strong>
+                <span className="book-details-meta-value">
+                  {book.category || 'Non spécifié'}
+                </span>
               </p>
               
               <p>
-                <strong><FaStar className="meta-icon" /> État :</strong> 
-                {book.condition || 'Non spécifié'}
+                <strong><FaStar className="meta-icon" />État</strong>
+                <span className="book-details-meta-value">
+                  {book.condition || 'Non spécifié'}
+                </span>
               </p>
               
               <p>
-                <strong><FaMapMarkerAlt className="meta-icon" /> Localisation :</strong> 
-                {book.location || 'Non spécifié'}
+                <strong><FaMapMarkerAlt className="meta-icon" />Localisation</strong>                <span className="book-details-meta-value">
+                  {book.location || 'Non spécifié'}
+                </span>
               </p>
-              
+
               <p>
                 <strong>
                   {book.availability === 'disponible' ? (
@@ -289,16 +303,18 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
                   ) : (
                     <FaExchangeAlt className="meta-icon" style={{ color: '#F44336' }} />
                   )}
-                  Disponibilité :
+                  Disponibilité
                 </strong>
-                <span className={`book-details-availability-${book.availability?.toLowerCase()}`}>
+                <span className={`book-details-meta-value book-details-availability-${book.availability?.toLowerCase()}`}>
                   {book.availability || 'Non spécifié'}
                 </span>
               </p>
               
               <p>
-                <strong><FaCalendarAlt className="meta-icon" /> Publié le :</strong> 
-                {new Date(book.created_at).toLocaleDateString('fr-FR')}
+                <strong><FaCalendarAlt className="meta-icon" />Publié le</strong>
+                <span className="book-details-meta-value">
+                  {new Date(book.created_at).toLocaleDateString('fr-FR')}
+                </span>
               </p>
             </div>
 
