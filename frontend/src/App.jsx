@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+import api from './services/api'; // Import de l'instance Axios configurée
 import Header from './components/Header/Header';
 import LoginModal from './components/Header/LoginModal';
 import SignupModal from './components/Header/SignupModal';
@@ -41,8 +41,7 @@ function App() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await axios.get('http://localhost:5001/api/auth/me', {
-          withCredentials: true,
+        const response = await api.get('/auth/me', {
           validateStatus: (status) => status < 500
         });
 
@@ -66,11 +65,7 @@ function App() {
 
   const handleLogin = async (credentials) => {
     try {
-      const response = await axios.post(
-        'http://localhost:5001/api/auth/login',
-        credentials,
-        { withCredentials: true }
-      );
+      const response = await api.post('/auth/login', credentials);
 
       setIsAuthenticated(true);
       setCurrentUser({
@@ -105,7 +100,7 @@ function App() {
 
   const handleSignup = async (userData) => {
     try {
-      await axios.post('http://localhost:5001/api/auth/register', {
+      await api.post('/auth/register', {
         username: userData.username,
         email: userData.email,
         password: userData.password
@@ -120,11 +115,7 @@ function App() {
 
   const handleLogout = async () => {
     try {
-      await axios.post(
-        'http://localhost:5001/api/auth/logout',
-        {},
-        { withCredentials: true }
-      );
+      await api.post('/auth/logout', {});
 
       setIsAuthenticated(false);
       setCurrentUser(null);

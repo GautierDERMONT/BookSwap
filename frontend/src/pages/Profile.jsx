@@ -162,11 +162,18 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
   };
 
 
-  const handleAvatarChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+const handleAvatarChange = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
 
-    const reader = new FileReader();
+  // Vérification de la taille du fichier (5Mo max)
+  if (file.size > 5 * 1024 * 1024) {
+    setMessage({ text: "L'avatar ne peut pas dépasser 5Mo", type: 'error' });
+    e.target.value = ''; // Réinitialise l'input file
+    return;
+  }
+
+  const reader = new FileReader();
     reader.onload = (event) => {
       setTempAvatar(event.target.result);
       setFormData(prev => ({
@@ -174,6 +181,9 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
         avatar: file,
         deleteAvatar: false
       }));
+    };
+    reader.onerror = () => {
+      setMessage({ text: "Erreur lors de la lecture du fichier", type: 'error' });
     };
     reader.readAsDataURL(file);
   };

@@ -3,10 +3,11 @@ const mysql = require('mysql2/promise');
 
 // Création d'un pool de connexions à la base de données MySQL
 const pool = mysql.createPool({
-  host: 'localhost',
+  host: 'trolley.proxy.rlwy.net',
   user: 'root',
-  password: '',
-  database: 'bookswap',
+  password: 'TaRzDjoGfxoIOVTdXVzRysTrVFTtGrEY',
+  database: 'railway',
+  port: process.env.DB_PORT, // Ajout du port
   waitForConnections: true,
   connectionLimit: 10,
   timezone: 'local' 
@@ -18,12 +19,19 @@ const connectDB = async () => {
     const connection = await pool.getConnection();
     await connection.ping();
     connection.release();
-    console.log('✅ MySQL connecté via WAMP...');
+    console.log('✅ MySQL connecté via RailWAy...');
   } catch (err) {
     console.error('❌ Erreur connexion MySQL :', err);
     throw err;
   }
 };
+
+console.log("Connecting to MySQL at:", {
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  database: process.env.DB_NAME
+});
 
 // Vérifie régulièrement que la connexion MySQL est toujours active (toutes les 60 secondes)
 setInterval(async () => {
