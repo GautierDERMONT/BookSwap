@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api'; 
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import './Profile.css';
 import BookCard from '../components/BookCard';
@@ -48,7 +48,7 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
     const fetchProfile = async () => {
       try {
         if (isPublicProfile && userId) {
-          const response = await axios.get(`http://localhost:5001/api/auth/profile/${userId}`, {
+          const response = await api.get(`/auth/profile/${userId}`, {
             withCredentials: true
           });
           setProfileUser(response.data);
@@ -65,7 +65,7 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
           });
           setTempAvatar(response.data.avatar ? `http://localhost:5001${response.data.avatar}` : '');
         } else {
-          const response = await axios.get('http://localhost:5001/api/auth/profile', {
+          const response = await api.get('/auth/profile', {
             withCredentials: true
           });
           setFormData({
@@ -90,7 +90,7 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
     const fetchUserBooks = async () => {
       try {
         const targetUserId = isPublicProfile ? userId : currentUser?.id;
-        const response = await axios.get(`http://localhost:5001/api/books/user/${targetUserId}`, {
+        const response = await api.get(`/books/user/${targetUserId}`, {
           withCredentials: true
         });
         setUserBooks(response.data.books);
@@ -230,15 +230,15 @@ const handleAvatarChange = (e) => {
       }
 
       if (formData.deleteAvatar) {
-        await axios.delete('http://localhost:5001/api/auth/avatar', {
+        await api.delete('/auth/avatar', {
           withCredentials: true
         });
       } else if (formData.avatar) {
         const avatarForm = new FormData();
         avatarForm.append('avatar', formData.avatar);
         
-        await axios.put(
-          'http://localhost:5001/api/auth/avatar',
+        await api.put(
+          '/auth/avatar',
           avatarForm,
           {
             withCredentials: true,
@@ -249,8 +249,8 @@ const handleAvatarChange = (e) => {
         );
       }
 
-      await axios.put(
-        'http://localhost:5001/api/auth/profile',
+      await api.put(
+        '/auth/profile',
         {
           username: formData.username,
           location: formData.location,
@@ -283,7 +283,7 @@ const handleAvatarChange = (e) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible et supprimera tous vos livres, messages et données.')) {
       try {
         setIsLoading(true);
-        await axios.delete('http://localhost:5001/api/auth/account', {
+        await api.delete('/auth/account', {
           withCredentials: true
         });
         setMessage({ text: 'Compte supprimé avec succès', type: 'success' });

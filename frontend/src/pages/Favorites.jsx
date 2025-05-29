@@ -1,9 +1,10 @@
 // pages/FavoritesPage.jsx
 
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import BookCard from '../components/BookCard';
 import './Favorites.css';
+import api from '../services/api'; // Import de l'instance Axios configurée
+
 
 export default function FavoritesPage({ currentUser }) {
   const [favorites, setFavorites] = useState([]);
@@ -11,7 +12,7 @@ export default function FavoritesPage({ currentUser }) {
 
     const fetchFavorites = async () => {
     try {
-        const res = await axios.get(`http://localhost:5001/api/favorites/${currentUser.id}`);
+        const res = await api.get(`/favorites/${currentUser.id}`);
         console.log('Favoris reçus:', res.data); // Ajout pour debug
         setFavorites(res.data);
     } catch (err) {

@@ -3,6 +3,7 @@ require('dotenv').config();
 const app = require('./app');
 const { connectDB } = require('./config/db');
 
+
 const PORT = process.env.PORT || 5001; // Définition du port d'écoute, avec fallback
 
 // Fonction principale qui gère la connexion à la base de données et le lancement du serveur
