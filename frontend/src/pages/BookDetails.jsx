@@ -205,6 +205,7 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
                     alt={book.title}
                     onClick={() => openZoom(0)}
                     onError={(e) => (e.target.src = `${API_URL}/placeholder.jpg`)}
+                    loading="lazy"
                   />
                 ) : (
                   <div className="book-details-empty-image">Pas d'image disponible</div>
@@ -219,6 +220,7 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
                       className="book-details-thumbnail"
                       onClick={() => openZoom(index)}
                       onError={(e) => (e.target.src = `${API_URL}/placeholder-thumbnail.jpg`)}
+                      loading="lazy"
                     />
                   ) : (
                     <div className="book-details-empty-image">pas d'autre image</div>
@@ -263,6 +265,7 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
                         onError={(e) => {
                           e.target.src = `${API_URL}/default-avatar.png`;
                         }}
+                        loading="lazy"
                       />
                     ) : (
                       <div className="book-details-default-avatar">
@@ -289,7 +292,8 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
               </p>
               
               <p>
-                <strong><FaMapMarkerAlt className="meta-icon" />Localisation</strong>                <span className="book-details-meta-value">
+                <strong><FaMapMarkerAlt className="meta-icon" />Localisation</strong>
+                <span className="book-details-meta-value">
                   {book.location || 'Non spécifié'}
                 </span>
               </p>
@@ -369,6 +373,7 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
                 src={images[zoomedImageIndex]}
                 alt="Agrandissement"
                 className="book-details-zoomed-image"
+                loading="lazy"
               />
               <button className="book-details-close-button" onClick={closeZoom}>
                 &#10005;

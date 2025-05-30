@@ -3,8 +3,7 @@ require('dotenv').config();
 const app = require('./app');
 const { connectDB } = require('./config/db');
 
-
-const PORT = process.env.PORT || 8080; // Définition du port d'écoute, avec fallback
+const PORT = process.env.PORT || 5001; // Définition du port d'écoute, avec fallback
 
 // Fonction principale qui gère la connexion à la base de données et le lancement du serveur
 const startServer = async () => {
@@ -12,7 +11,7 @@ const startServer = async () => {
     await connectDB(); // Connexion à la base de données avant de lancer le serveur
     
     // Démarrage du serveur sur le port défini et affichage d'un message de succès
-    app.listen(PORT, '0.0.0.0', () => {
+    app.listen(PORT, () => {
       console.log(`🚀 Serveur lancé sur le port ${PORT}...`);
     });
   } catch (err) {

@@ -1,12 +1,12 @@
 import axios from 'axios';
 
-// Instance Axios configurée pour le frontend
+// Instance Axios avec cookies et base URL du backend
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: 'http://localhost:5001/api',
   withCredentials: true,
 });
 
-// Exemple de requête avec gestion d'erreur
+// Envoi d'un formulaire d'ajout de livre (multipart + timeout)
 export const addBook = async (formData) => {
   try {
     const response = await api.post('/books', formData, {
@@ -15,9 +15,10 @@ export const addBook = async (formData) => {
     });
     return response.data;
   } catch (error) {
-    console.error('API Error:', {
+    console.error('Error:', {
       message: error.message,
       response: error.response?.data,
+      stack: error.stack,
     });
     throw error;
   }

@@ -1,16 +1,17 @@
-// Importation du module mysql2 avec support des promesses
+// Importation du module mysql2 avec support des promesses et .env
+require('dotenv').config();
 const mysql = require('mysql2/promise');
 
 // Création d'un pool de connexions à la base de données MySQL
 const pool = mysql.createPool({
-  host: 'trolley.proxy.rlwy.net',
-  user: 'root',
-  password: 'TaRzDjoGfxoIOVTdXVzRysTrVFTtGrEY',
-  database: 'railway',
-  port: process.env.DB_PORT, // Ajout du port
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT,
   waitForConnections: true,
   connectionLimit: 10,
-  timezone: 'local' 
+  timezone: 'local'
 });
 
 // Fonction pour établir et tester la connexion à la base de données

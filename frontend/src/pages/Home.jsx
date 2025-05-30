@@ -4,8 +4,6 @@ import { Plus } from 'react-feather'; // Icône "Plus" pour le bouton
 import { useNavigate, useLocation } from 'react-router-dom';
 import BookCard from '../components/BookCard'; // Composant pour afficher chaque livre
 import './Home.css'; // Fichier de styles CSS
-import api from '../services/api'; // Import de l'instance Axios configurée
-
 
 // Définition du composant principal de la page d'accueil
 const HomePage = ({ isAuthenticated, currentUser, onOpenLogin }) => {

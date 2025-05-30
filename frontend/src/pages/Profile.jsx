@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import api from '../services/api'; 
+import axios from 'axios';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import './Profile.css';
 import BookCard from '../components/BookCard';
@@ -48,7 +48,7 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
     const fetchProfile = async () => {
       try {
         if (isPublicProfile && userId) {
-          const response = await api.get(`/auth/profile/${userId}`, {
+          const response = await axios.get(`http://localhost:5001/api/auth/profile/${userId}`, {
             withCredentials: true
           });
           setProfileUser(response.data);
@@ -65,7 +65,7 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
           });
           setTempAvatar(response.data.avatar ? `http://localhost:5001${response.data.avatar}` : '');
         } else {
-          const response = await api.get('/auth/profile', {
+          const response = await axios.get('http://localhost:5001/api/auth/profile', {
             withCredentials: true
           });
           setFormData({
@@ -90,9 +90,9 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
     const fetchUserBooks = async () => {
       try {
         const targetUserId = isPublicProfile ? userId : currentUser?.id;
-        const response = await api.get(`/books/user/${targetUserId}`, {
-          withCredentials: true
-        });
+        const response = await axios.get(`http://localhost:5001/api/books/user/${targetUserId}`, {
+            withCredentials: true
+          });
         setUserBooks(response.data.books);
       } catch (error) {
         console.error('Error fetching user books:', error);
@@ -140,20 +140,19 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-      if (name === 'bio') {
-        const wordArray = value.trim().split(/\s+/).filter(Boolean);
-        const wordCount = wordArray.length;
+    if (name === 'bio') {
+      const wordArray = value.trim().split(/\s+/).filter(Boolean);
+      const wordCount = wordArray.length;
 
-        if (wordCount > 50) {
-          setMessage({ text: 'La bio ne peut pas dépasser 50 mots.', type: 'error' });
-          return;
-        } else {
-          setMessage({ text: '', type: '' });
-        }
-
-        setBioWordCount(wordCount);
+      if (wordCount > 50) {
+        setMessage({ text: 'La bio ne peut pas dépasser 50 mots.', type: 'error' });
+        return;
+      } else {
+        setMessage({ text: '', type: '' });
       }
 
+      setBioWordCount(wordCount);
+    }
 
     setFormData(prev => ({
       ...prev,
@@ -161,19 +160,18 @@ const Profile = ({ currentUser, isPublicProfile = false, executeAfterAuth }) => 
     }));
   };
 
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-const handleAvatarChange = (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+    // Vérification de la taille du fichier (5Mo max)
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > MAX_SIZE) {
+      setMessage({ text: 'La taille de l\'avatar ne doit pas dépasser 5Mo', type: 'error' });
+      return;
+    }
 
-  // Vérification de la taille du fichier (5Mo max)
-  if (file.size > 5 * 1024 * 1024) {
-    setMessage({ text: "L'avatar ne peut pas dépasser 5Mo", type: 'error' });
-    e.target.value = ''; // Réinitialise l'input file
-    return;
-  }
-
-  const reader = new FileReader();
+    const reader = new FileReader();
     reader.onload = (event) => {
       setTempAvatar(event.target.result);
       setFormData(prev => ({
@@ -181,9 +179,7 @@ const handleAvatarChange = (e) => {
         avatar: file,
         deleteAvatar: false
       }));
-    };
-    reader.onerror = () => {
-      setMessage({ text: "Erreur lors de la lecture du fichier", type: 'error' });
+      setMessage({ text: '', type: '' }); // Clear any previous error messages
     };
     reader.readAsDataURL(file);
   };
@@ -195,6 +191,7 @@ const handleAvatarChange = (e) => {
       avatar: null
     }));
     setTempAvatar('');
+    setMessage({ text: '', type: '' }); // Clear any previous error messages
   };
 
   const handleCancelDelete = () => {
@@ -219,6 +216,11 @@ const handleAvatarChange = (e) => {
       setIsLoading(true);
       setMessage({ text: '', type: '' });
 
+      // Vérification supplémentaire de la taille de l'avatar au cas où
+      if (formData.avatar && formData.avatar.size > 5 * 1024 * 1024) {
+        throw new Error('La taille de l\'avatar ne doit pas dépasser 5Mo');
+      }
+
       if (formData.newPassword) {
         if (formData.newPassword !== formData.confirmPassword) {
           throw new Error('Les nouveaux mots de passe ne correspondent pas');
@@ -230,15 +232,15 @@ const handleAvatarChange = (e) => {
       }
 
       if (formData.deleteAvatar) {
-        await api.delete('/auth/avatar', {
+        await axios.delete('http://localhost:5001/api/auth/avatar', {
           withCredentials: true
         });
       } else if (formData.avatar) {
         const avatarForm = new FormData();
         avatarForm.append('avatar', formData.avatar);
         
-        await api.put(
-          '/auth/avatar',
+        await axios.put(
+          'http://localhost:5001/api/auth/avatar',
           avatarForm,
           {
             withCredentials: true,
@@ -249,8 +251,8 @@ const handleAvatarChange = (e) => {
         );
       }
 
-      await api.put(
-        '/auth/profile',
+      await axios.put(
+        'http://localhost:5001/api/auth/profile',
         {
           username: formData.username,
           location: formData.location,
@@ -283,7 +285,7 @@ const handleAvatarChange = (e) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible et supprimera tous vos livres, messages et données.')) {
       try {
         setIsLoading(true);
-        await api.delete('/auth/account', {
+        await axios.delete('http://localhost:5001/api/auth/account', {
           withCredentials: true
         });
         setMessage({ text: 'Compte supprimé avec succès', type: 'success' });
@@ -452,8 +454,6 @@ const handleAvatarChange = (e) => {
               </div>
             </div>
 
-
-
             {message.text && (
               <div className={`profile-message ${message.type}`}>
                 {message.text}
@@ -531,11 +531,8 @@ const handleAvatarChange = (e) => {
                       onClick={(e) => {
                         e.stopPropagation();
                         navigate(`/books/${book.id}/edit`);
-                        
                       }}
-                      
                     >
-                      
                       ✏️ Modifier
                     </button>
                   </div>

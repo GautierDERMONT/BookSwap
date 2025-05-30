@@ -217,6 +217,7 @@ const EditBook = () => {
                   src={image.url}
                   alt={`Preview ${index}`}
                   className="preview-image"
+                  loading="lazy"
                 />
                 <button
                   type="button"
@@ -234,6 +235,7 @@ const EditBook = () => {
                   src={URL.createObjectURL(image)}
                   alt={`Preview ${index}`}
                   className="preview-image"
+                  loading="lazy"
                 />
                 <button
                   type="button"

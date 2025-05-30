@@ -199,6 +199,7 @@ const AddBook = () => {
                   src={URL.createObjectURL(image)}
                   alt={`Preview ${index}`}
                   className="preview-image"
+                  loading="lazy"
                 />
                 <button
                   type="button"

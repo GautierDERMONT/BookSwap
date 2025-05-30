@@ -33,8 +33,9 @@
    git clone https://github.com/GautierDERMONT/bookswap.git
    ```
 
-2. **Ouvrir deux terminaux en mode `CMD`** (éviter PowerShell).  
-   L’un dans le dossier `frontend`, l’autre dans `backend` :
+2. **Ouvrir deux terminaux en mode `CMD`** (éviter PowerShell).
+   S'assurer dêtre dans le répertoire du projet bookswap  
+   un pour entrer dans le dossier `frontend`, l’autre dans `backend` :
 
    ```bash
    cd frontend
@@ -51,7 +52,13 @@
    npm install
    ```
 
-4. **Configurer la base de données :**
+4. **Base de donnée:**
+
+ - Base donnée hébergé sur Railway, importation des tables grâce à mysqlworkbench
+
+
+
+ -Configurer la base de données sur wamp(pour tester en local) :**
 
    - Assurez-vous que **Wamp** est lancé.
    - Vérifiez les fichiers de configuration :
@@ -71,6 +78,10 @@
 
    ```bash
    npm start
+   ```
+ ou 
+   ```bash
+   node server.js
    ```
 
 3. **Lancer le serveur frontend :**
