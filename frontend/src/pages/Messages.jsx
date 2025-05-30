@@ -25,8 +25,13 @@ const Messages = ({ currentUser }) => {
   useEffect(() => {
     const newSocket = io('http://localhost:5001', {
       withCredentials: true,
-      path: '/socket.io',
-      transports: ['websocket']
+      extraHeaders: {
+        "Authorization": `Bearer ${localStorage.getItem('token')}`
+      },
+      path: "/socket.io",
+      transports: ['websocket', 'polling'],
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
     });
 
     newSocket.on('connect', () => {
@@ -49,7 +54,7 @@ const Messages = ({ currentUser }) => {
 
     socket.emit('joinConversation', selectedConversation.id);
 
-    socket.on('newMessage', (message) => {
+    const handleNewMessage = (message) => {
       if (message.conversation_id === selectedConversation.id) {
         setMessages(prev => [...prev, message]);
         scrollToBottom();
@@ -68,7 +73,9 @@ const Messages = ({ currentUser }) => {
         }
         return conv;
       }));
-    });
+    };
+
+    socket.on('newMessage', handleNewMessage);
 
     socket.on('messagesRead', ({ conversationId }) => {
       if (conversationId === selectedConversation.id) {
@@ -89,7 +96,7 @@ const Messages = ({ currentUser }) => {
     });
 
     return () => {
-      socket.off('newMessage');
+      socket.off('newMessage', handleNewMessage);
       socket.off('messagesRead');
       socket.off('conversationDeleted');
       socket.emit('leaveConversation', selectedConversation.id);

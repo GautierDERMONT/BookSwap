@@ -18,10 +18,25 @@ const initSocket = (server) => {
 
     socket.on('joinConversation', (conversationId) => {
       socket.join(conversationId);
+      console.log(`Client joined conversation ${conversationId}`);
     });
 
-    socket.on('leaveConversation', (conversationId) => {
-      socket.leave(conversationId);
+    socket.on('sendMessage', async (messageData) => {
+      try {
+        const [user] = await pool.query(
+          'SELECT username, avatar FROM users WHERE id = ?',
+          [messageData.senderId]
+        );
+
+        io.to(messageData.conversationId).emit('newMessage', {
+          ...messageData,
+          sender_name: user[0].username,
+          sender_avatar: user[0].avatar,
+          created_at: new Date().toISOString()
+        });
+      } catch (err) {
+        console.error('Error broadcasting message:', err);
+      }
     });
 
     socket.on('disconnect', () => {

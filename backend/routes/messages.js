@@ -2,10 +2,10 @@ const express = require('express');
 const router = express.Router();
 const authenticate = require('../middleware/authenticate');
 const { pool } = require('../config/db');
+const { getIO } = require('../socket');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { getIO } = require('../socket');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
