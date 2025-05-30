@@ -1,14 +1,14 @@
 # 📚 BookSwap
 
 ## Description  
-**BookSwap** est une application web qui permet aux utilisateurs d’échanger des livres facilement entre eux. Elle offre un espace pour consulter un catalogue, ajouter ses propres livres, discuter avec d'autres utilisateurs et gérer ses échanges.
+**ZGM Book** est une application web qui permet aux utilisateurs d’échanger des livres facilement entre eux. Elle offre un espace pour consulter un catalogue, ajouter ses propres livres, discuter avec d'autres utilisateurs et gérer ses échanges.
 
 ---
 
 ## 🚀 Stack technique
 
-- **Backend** : Node.js  
-- **Frontend** : React  
+- **Backend** : Node.js (avec Express) 
+- **Frontend** : React  (avec Vite)
 - **Base de données** : MySQL  
 - **Authentification** : JWT (JSON Web Token)
 
@@ -18,10 +18,10 @@
 
 ### Prérequis
 
-- Node.js  
+- Node.js 
 - MySQL  
 - Git  
-- WampServer (ou équivalent pour héberger MySQL en local)
+- Optionnel: WampServer (ou équivalent pour héberger MySQL en local)
 
 ---
 
@@ -33,8 +33,8 @@
    git clone https://github.com/GautierDERMONT/bookswap.git
    ```
 
-2. **Ouvrir deux terminaux en mode `CMD`** (éviter PowerShell).
-   S'assurer dêtre dans le répertoire du projet bookswap  
+2. **Ouvrir deux terminaux en mode "Command Prompt"`CMD`** (éviter PowerShell).
+   S'assurer dêtre dans le répertoire du projet bookswap, 
    un pour entrer dans le dossier `frontend`, l’autre dans `backend` :
 
    ```bash
@@ -51,14 +51,15 @@
    ```bash
    npm install
    ```
+   quelques vulnérabilités peuvent s'afficher mais c'est normal
 
 4. **Base de donnée:**
 
- - Base donnée hébergé sur Railway, importation des tables grâce à mysqlworkbench
+ - Base donnée hébergé sur Railway, importation des tables grâce à MySQL Workbench
 
 
-
- -Configurer la base de données sur wamp(pour tester en local) :**
+Optionnel: 
+ - Configurer la base de données sur wamp(pour tester en local) :**
 
    - Assurez-vous que **Wamp** est lancé.
    - Vérifiez les fichiers de configuration :
@@ -72,25 +73,22 @@
 
 ## ▶️ Lancement des serveurs
 
-1. **Démarrer Wamp**
-
-2. **Lancer le serveur backend :**
+1. **Lancer le serveur backend :**
 
    ```bash
    npm start
    ```
- ou 
-   ```bash
+     ou
+    ```bash
    node server.js
    ```
-
-3. **Lancer le serveur frontend :**
+2. **Lancer le serveur frontend :**
 
    ```bash
    npm run dev
    ```
 
-4. Vous devriez voir les interfaces suivantes :  
+3. **Vous devriez voir les interfaces suivantes :**  
    - ![Lancement backend](/screenshots/start_backend.png)  
    - ![Lancement frontend](/screenshots/start_frontend.png)
 
@@ -117,10 +115,8 @@
   ![Filtrage](/screenshots/filters.png)
 
 - **Profil utilisateur (1/2)**  
-  ![Page Profile1](/screenshots/Profile1.png)
-
-- **Profil utilisateur (2/2)**  
-  ![Page Profile2](/screenshots/Profile2.png)
+  ![Page Profile 1/2](/screenshots/Profile1.png)
+  ![Page Profile 2/2](/screenshots/Profile2.png)
 
 - **Favoris**  
 ![Page Favoris](/screenshots/favorites.png)
@@ -129,8 +125,8 @@
 ![Page détails du livre](/screenshots/bookdetails.png)
 
 - **Ajout d’un livre**  
-  ![Page Ajout](/screenshots/addbook.png)
-
+  ![Page Ajout 1/2](/screenshots/addbook1.png)
+  ![Page Ajout 2/2](/screenshots/addbook2.png)
 
 
 - **Messagerie**  

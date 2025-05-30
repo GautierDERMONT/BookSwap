@@ -47,8 +47,8 @@ const Footer = () => {
               <p>Année académique 2024-2025</p>
               
               <p><strong>Hébergement :</strong></p>
-              <p>Localhost</p>
-              <p>Adresse de l'hébergeur</p>
+              <p>Railway</p>
+              
               
               <p><strong>Contact :</strong></p>
               <p>gautier.dermont1@gmail.com</p>
@@ -65,7 +65,7 @@ const Footer = () => {
             <h2>Politique de confidentialité</h2>
             <div className="modal-text-content">
               <p><strong>1. Données collectées</strong></p>
-              <p>Email, nom d'utilisateur et sur les livres échangé.</p>
+              <p>Email, nom d'utilisateur, et sur les livres échangé.</p>
               
               
               <p><strong>2. Utilisation des données</strong></p>

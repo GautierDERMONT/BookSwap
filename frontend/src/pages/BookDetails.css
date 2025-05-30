@@ -45,6 +45,8 @@
   display: flex; /* Nouvelle propriété */
 }
 
+
+
 .book-details-image-grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -57,11 +59,13 @@
   overflow: hidden;
   background: #f8f8f8;
   position: relative;
-  border: 2px dashed green;
+  border: 2px dashed var(--secondary-color);
   padding: 4px; /* Ajoute de l’espace intérieur entre la bordure et le contenu */
   box-sizing: border-box; /* Assure que padding n'affecte pas la taille globale */
 
 }
+
+
 
 .book-details-meta-value {
   margin-left: auto;
@@ -423,6 +427,8 @@
   border: 2px solid white;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
+
+
 
 .book-details-default-avatar {
   display: flex;

@@ -1,6 +1,5 @@
 bookswap/
-npm install lucide-react
-npm install vite-plugin-imagemin --save-dev
+
 
 
 bookswap/backend:
@@ -29,5 +28,7 @@ npm install axios react-router-dom socket.io-client
 npm install react-feather
 npm install js-cookie
 npm install react-icons
+npm install vite-plugin-imagemin --save-dev
+npm install lucide-react
 
 

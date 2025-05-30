@@ -43,6 +43,14 @@ const AddBook = () => {
     fetchUserLocation();
   }, []);
 
+  useEffect(() => {
+    return () => {
+      images.forEach(image => {
+        URL.revokeObjectURL(image.preview);
+      });
+    };
+  }, [images]);
+
   const countWords = (text) => {
     return text.trim().split(/\s+/).filter(Boolean).length;
   };
@@ -74,7 +82,7 @@ const AddBook = () => {
   };
 
   const handleFiles = (files) => {
-    const MAX_FILE_SIZE = 10 * 1024 * 1024;
+    const MAX_FILE_SIZE = 20 * 1024 * 1024;
     const MAX_FILES = 3;
 
     const validFiles = files
@@ -84,7 +92,7 @@ const AddBook = () => {
           return false;
         }
         if (file.size > MAX_FILE_SIZE) {
-          setError(`Le fichier ${file.name} est trop volumineux (max 10MB)`);
+          setError(`Le fichier ${file.name} est trop volumineux (max 20MB)`);
           return false;
         }
         return true;
@@ -92,13 +100,20 @@ const AddBook = () => {
       .slice(0, MAX_FILES - images.length);
 
     if (validFiles.length) {
-      setImages([...images, ...validFiles]);
+      const newImages = validFiles.map(file => ({
+        file,
+        preview: URL.createObjectURL(file)
+      }));
+      setImages([...images, ...newImages]);
       setError(null);
     }
   };
 
   const removeImage = (index) => {
-    setImages(images.filter((_, i) => i !== index));
+    const newImages = [...images];
+    URL.revokeObjectURL(newImages[index].preview);
+    newImages.splice(index, 1);
+    setImages(newImages);
   };
 
   const handleChange = (e) => {
@@ -141,8 +156,8 @@ const AddBook = () => {
       formDataToSend.append('description', formData.description.trim());
       formDataToSend.append('availability', formData.availability);
 
-      images.forEach((image) => {
-        formDataToSend.append('images', image);
+      images.forEach(({ file }) => {
+        formDataToSend.append('images', file);
       });
 
       await axios.post(`${API_URL}/api/books`, formDataToSend, {
@@ -196,7 +211,7 @@ const AddBook = () => {
             {images.map((image, index) => (
               <div key={index} className="preview-item">
                 <img
-                  src={URL.createObjectURL(image)}
+                  src={image.preview}
                   alt={`Preview ${index}`}
                   className="preview-image"
                   loading="lazy"
@@ -233,6 +248,19 @@ const AddBook = () => {
             />
           </div>
           <div className="form-group">
+            <label>Auteur *</label>
+            <input
+              type="text"
+              name="author"
+              value={formData.author}
+              onChange={handleChange}
+              required
+            />
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
             <label>Catégorie *</label>
             <input
               type="text"
@@ -242,9 +270,6 @@ const AddBook = () => {
               required
             />
           </div>
-        </div>
-
-        <div className="form-row">
           <div className="form-group">
             <label>État *</label>
             <select
@@ -260,6 +285,9 @@ const AddBook = () => {
               <option value="Usagé">Usagé</option>
             </select>
           </div>
+        </div>
+       
+        <div className="form-row">
           <div className="form-group">
             <label>Lieu *</label>
             <input
@@ -270,33 +298,20 @@ const AddBook = () => {
               required
             />
           </div>
+          <div className="form-group">
+            <label>Disponibilité *</label>
+            <select
+              name="availability"
+              value={formData.availability}
+              onChange={handleChange}
+              required
+            >
+              <option value="Disponible">Disponible</option>
+              <option value="Réservé">Réservé</option>
+            </select>
+          </div>
         </div>
-       
-        <div className="form-group">
-          <label>Auteur *</label>
-          <input
-            type="text"
-            name="author"
-            value={formData.author}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <br />
 
-        <div className="form-group">
-          <label>Disponibilité *</label>
-          <select
-            name="availability"
-            value={formData.availability}
-            onChange={handleChange}
-            required
-          >
-            <option value="Disponible">Disponible</option>
-            <option value="Réservé">Réservé</option>
-          </select>
-        </div>
-        <br />
         <div className="form-group">
           <label>Description *</label>
           <textarea

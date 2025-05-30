@@ -6,16 +6,18 @@ const fs = require('fs');
 
 const app = express();
 
-// Middlewares pour parser cookies, JSON et données URL-encodées
-app.use(cookieParser());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
 // Configuration CORS pour autoriser le frontend sur localhost:5173
 app.use(cors({
   origin: 'http://localhost:5173',
   credentials: true
 }));
+
+// Middlewares pour parser cookies, JSON et données URL-encodées
+app.use(cookieParser());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+
 
 // Servir les fichiers statiques uploadés
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

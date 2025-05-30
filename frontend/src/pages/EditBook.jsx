@@ -27,10 +27,6 @@ const EditBook = () => {
     availability: 'Disponible'
   });
 
-  const countWords = (text) => {
-    return text.trim().split(/\s+/).filter(Boolean).length;
-  };
-
   useEffect(() => {
     const fetchBookData = async () => {
       setIsLoading(true);
@@ -64,6 +60,18 @@ const EditBook = () => {
     fetchBookData();
   }, [id]);
 
+  useEffect(() => {
+    return () => {
+      images.forEach(image => {
+        URL.revokeObjectURL(image.preview);
+      });
+    };
+  }, [images]);
+
+  const countWords = (text) => {
+    return text.trim().split(/\s+/).filter(Boolean).length;
+  };
+
   const handleDragEnter = (e) => {
     e.preventDefault();
     setIsDragging(true);
@@ -91,27 +99,44 @@ const EditBook = () => {
   };
 
   const handleFiles = (files) => {
-    const validFiles = files
-      .filter(file => file.type.startsWith('image/'))
-      .slice(0, 3 - (images.length + existingImages.length));
+    const MAX_FILE_SIZE = 20 * 1024 * 1024;
+    const MAX_FILES = 3;
 
-    if (files.length !== validFiles.length) {
-      setError('Veuillez choisir uniquement des images.');
-    } else {
-      setError(null);
-    }
+    const validFiles = files
+      .filter(file => {
+        if (!file.type.startsWith('image/')) {
+          setError('Veuillez choisir uniquement des images.');
+          return false;
+        }
+        if (file.size > MAX_FILE_SIZE) {
+          setError(`Le fichier ${file.name} est trop volumineux (max 5MB)`);
+          return false;
+        }
+        return true;
+      })
+      .slice(0, MAX_FILES - (images.length + existingImages.length));
 
     if (validFiles.length) {
-      setImages([...images, ...validFiles]);
+      const newImages = validFiles.map(file => ({
+        file,
+        preview: URL.createObjectURL(file)
+      }));
+      setImages([...images, ...newImages]);
+      setError(null);
     }
   };
 
   const removeImage = (index) => {
-    setImages(images.filter((_, i) => i !== index));
+    const newImages = [...images];
+    URL.revokeObjectURL(newImages[index].preview);
+    newImages.splice(index, 1);
+    setImages(newImages);
   };
 
   const removeExistingImage = (index) => {
-    setExistingImages(existingImages.filter((_, i) => i !== index));
+    const newExistingImages = [...existingImages];
+    newExistingImages.splice(index, 1);
+    setExistingImages(newExistingImages);
   };
 
   const handleChange = (e) => {
@@ -151,7 +176,7 @@ const EditBook = () => {
         formDataToSend.append(key, value.trim());
       });
 
-      images.forEach(image => formDataToSend.append('images', image));
+      images.forEach(({ file }) => formDataToSend.append('images', file));
       existingImages.forEach(image => formDataToSend.append('existingImages', image.path));
 
       await axios.put(`${API_URL}/api/books/${id}`, formDataToSend, {
@@ -232,7 +257,7 @@ const EditBook = () => {
             {images.map((image, index) => (
               <div key={`new-${index}`} className="preview-item">
                 <img
-                  src={URL.createObjectURL(image)}
+                  src={image.preview}
                   alt={`Preview ${index}`}
                   className="preview-image"
                   loading="lazy"
@@ -269,7 +294,20 @@ const EditBook = () => {
             />
           </div>
           <div className="form-group">
-            <label>Catégorie*</label>
+            <label>Auteur *</label>
+            <input
+              type="text"
+              name="author"
+              value={formData.author}
+              onChange={handleChange}
+              required
+            />
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Catégorie *</label>
             <input
               type="text"
               name="category"
@@ -278,9 +316,6 @@ const EditBook = () => {
               required
             />
           </div>
-        </div>
-
-        <div className="form-row">
           <div className="form-group">
             <label>État *</label>
             <select
@@ -296,6 +331,9 @@ const EditBook = () => {
               <option value="Usagé">Usagé</option>
             </select>
           </div>
+        </div>
+       
+        <div className="form-row">
           <div className="form-group">
             <label>Lieu *</label>
             <input
@@ -306,33 +344,21 @@ const EditBook = () => {
               required
             />
           </div>
+          <div className="form-group">
+            <label>Disponibilité *</label>
+            <select
+              name="availability"
+              value={formData.availability}
+              onChange={handleChange}
+              required
+            >
+              <option value="Disponible">Disponible</option>
+              <option value="Réservé">Réservé</option>
+              <option value="Echangé">Echangé</option>
+            </select>
+          </div>
         </div>
-       
-        <div className="form-group">
-          <label>Auteur *</label>
-          <input
-            type="text"
-            name="author"
-            value={formData.author}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <br />
-        <div className="form-group">
-          <label>Disponibilité *</label>
-          <select
-            name="availability"
-            value={formData.availability}
-            onChange={handleChange}
-            required
-          >
-            <option value="Disponible">Disponible</option>
-            <option value="Réservé">Réservé</option>
-            <option value="Echangé">Echangé</option>
-          </select>
-        </div>
-        <br />
+
         <div className="form-group">
           <label>Description *</label>
           <textarea
