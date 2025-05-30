@@ -1,50 +1,30 @@
 const socketIO = require('socket.io');
-const { pool } = require('./config/db');
 
-let io;
+let io; // Variable globale pour stocker l'instance socket.io
 
+// Initialisation de socket.io avec le serveur HTTP et configuration CORS
 const initSocket = (server) => {
   io = socketIO(server, {
-    cors: {
-      origin: 'http://localhost:5173',
-      methods: ['GET', 'POST'],
-      credentials: true
-    },
-    path: '/socket.io'
+    cors: { origin: 'http://localhost:5173' }, // Autorisation CORS pour le front sur ce port
   });
 
+  // Gestion des connexions clients
   io.on('connection', (socket) => {
     console.log('New client connected');
 
-    socket.on('joinConversation', (conversationId) => {
-      socket.join(conversationId);
-      console.log(`Client joined conversation ${conversationId}`);
+    // Écoute de l'événement 'sendMessage' envoyé par un client
+    socket.on('sendMessage', (message) => {
+      io.emit('newMessage', message); // Diffusion du message à tous les clients connectés
     });
 
-    socket.on('sendMessage', async (messageData) => {
-      try {
-        const [user] = await pool.query(
-          'SELECT username, avatar FROM users WHERE id = ?',
-          [messageData.senderId]
-        );
-
-        io.to(messageData.conversationId).emit('newMessage', {
-          ...messageData,
-          sender_name: user[0].username,
-          sender_avatar: user[0].avatar,
-          created_at: new Date().toISOString()
-        });
-      } catch (err) {
-        console.error('Error broadcasting message:', err);
-      }
-    });
-
+    // Gestion de la déconnexion d'un client
     socket.on('disconnect', () => {
       console.log('Client disconnected');
     });
   });
 };
 
+// Fonction pour récupérer l'instance socket.io (utile dans d'autres fichiers)
 const getIO = () => {
   if (!io) throw new Error('Socket.io not initialized!');
   return io;

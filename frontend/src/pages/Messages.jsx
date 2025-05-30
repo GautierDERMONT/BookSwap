@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import api from '../services/api';
-import { io } from 'socket.io-client';
 import './Messages.css';
 import { FiMessageSquare, FiChevronRight, FiClock, FiCheck, FiMapPin, FiImage } from 'react-icons/fi';
 
@@ -15,122 +14,35 @@ const Messages = ({ currentUser }) => {
   const [interlocutor, setInterlocutor] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [socket, setSocket] = useState(null);
-  const [isConnected, setIsConnected] = useState(false);
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams();
   const [initialSelectionDone, setInitialSelectionDone] = useState(false);
 
-  useEffect(() => {
-    const socketInstance = io('http://localhost:5001', {
-      withCredentials: true,
-      path: "/socket.io",
-      transports: ['websocket'],
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      autoConnect: true
-    });
-
-    socketInstance.on('connect', () => {
-      console.log('Socket connected');
-      setIsConnected(true);
-      setSocket(socketInstance);
-    });
-
-    socketInstance.on('disconnect', (reason) => {
-      console.log('Socket disconnected:', reason);
-      setIsConnected(false);
-      if (reason === 'io server disconnect') {
-        socketInstance.connect();
-      }
-    });
-
-    socketInstance.on('connect_error', (err) => {
-      console.error('Connection error:', err);
-      setTimeout(() => {
-        socketInstance.connect();
-      }, 1000);
-    });
-
-    setSocket(socketInstance);
-
-    return () => {
-      socketInstance.off('connect');
-      socketInstance.off('disconnect');
-      socketInstance.off('connect_error');
-      socketInstance.disconnect();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!socket || !selectedConversation) return;
-
-    socket.emit('joinConversation', selectedConversation.id);
-
-    const handleNewMessage = (message) => {
-      if (message.conversation_id === selectedConversation.id) {
-        setMessages(prev => [...prev, message]);
-        scrollToBottom();
-      }
-      
-      setConversations(prev => prev.map(conv => {
-        if (conv.id === message.conversation_id) {
-          return {
-            ...conv,
-            last_message: message.content || '[Image]',
-            last_message_date: message.created_at,
-            unread_count: message.sender_id !== currentUser.id 
-              ? (conv.unread_count || 0) + 1 
-              : conv.unread_count
-          };
-        }
-        return conv;
-      }));
-    };
-
-    const handleMessagesRead = ({ conversationId }) => {
-      if (conversationId === selectedConversation.id) {
-        setMessages(prev => prev.map(msg => ({
-          ...msg,
-          is_read: true
-        })));
-      }
-
-      setConversations(prev => prev.map(conv => {
-        if (conv.id === conversationId) {
-          return {
-            ...conv,
-            unread_count: 0
-          };
-        }
-        return conv;
-      }));
-    };
-
-    const handleConversationDeleted = ({ conversationId }) => {
-      if (conversationId === selectedConversation?.id) {
-        setSelectedConversation(null);
-        setMessages([]);
-        setCurrentBook(null);
-      }
-      setConversations(prev => prev.filter(c => c.id !== conversationId));
-    };
-
-    socket.on('newMessage', handleNewMessage);
-    socket.on('messagesRead', handleMessagesRead);
-    socket.on('conversationDeleted', handleConversationDeleted);
-
-    return () => {
-      socket.off('newMessage', handleNewMessage);
-      socket.off('messagesRead', handleMessagesRead);
-      socket.off('conversationDeleted', handleConversationDeleted);
-      socket.emit('leaveConversation', selectedConversation.id);
-    };
-  }, [socket, selectedConversation, currentUser]);
+  const getDefaultAvatar = (username) => {
+    if (!username) return 'U';
+    const firstLetter = username.charAt(0).toUpperCase();
+    const colors = ['#FF5733', '#33FF57', '#3357FF', '#F333FF', '#33FFF3'];
+    const color = colors[firstLetter.charCodeAt(0) % colors.length];
+    
+    return (
+      <div style={{
+        backgroundColor: color,
+        width: '32px',
+        height: '32px',
+        borderRadius: '50%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'white',
+        fontSize: '1rem',
+        fontWeight: 'bold'
+      }}>
+        {firstLetter}
+      </div>
+    );
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -222,6 +134,34 @@ const Messages = ({ currentUser }) => {
     fetchData();
   }, [location.state, id]);
 
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      if (selectedConversation) {
+        try {
+          const messagesRes = await api.get(`/conversations/${selectedConversation.id}/messages`);
+          setMessages(messagesRes.data.messages || []);
+        } catch (error) {
+          console.error('Error refreshing messages:', error);
+        }
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [selectedConversation]);
+
+  useEffect(() => {
+    if (selectedConversation) {
+      api.post(`/conversations/${selectedConversation.id}/mark-as-read`);
+      
+      setConversations(prev => prev.map(conv => {
+        if (conv.id === selectedConversation.id) {
+          return { ...conv, unread_count: 0 };
+        }
+        return conv;
+      }));
+    }
+  }, [selectedConversation]);
+
   const loadConversationDetails = async (convId, bookId) => {
     try {
       const [messagesRes, bookRes] = await Promise.all([
@@ -238,13 +178,15 @@ const Messages = ({ currentUser }) => {
         });
       }
 
-      const conv = conversations.find(c => c.id === convId);
-      if (conv) {
-        setInterlocutor({
-          id: conv.interlocutor_id,
-          username: conv.interlocutor_name,
-          avatar: conv.interlocutor_avatar
-        });
+      if (selectedConversation?.id === convId) {
+        const conv = conversations.find(c => c.id === convId);
+        if (conv) {
+          setInterlocutor({
+            id: conv.interlocutor_id,
+            username: conv.interlocutor_name,
+            avatar: conv.interlocutor_avatar
+          });
+        }
       }
       
       scrollToBottom();
@@ -286,45 +228,18 @@ const Messages = ({ currentUser }) => {
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation) return;
-    
-    if (!isConnected || !socket) {
-      alert('Connection perdue. Veuillez réessayer.');
-      return;
-    }
 
     try {
-      const tempMessage = {
-        id: `temp-${Date.now()}`,
+      await api.post(`/conversations/${selectedConversation.id}/messages`, {
         content: newMessage,
-        sender_id: currentUser.id,
-        conversation_id: selectedConversation.id,
-        created_at: new Date().toISOString(),
-        is_read: true,
-        sender_name: currentUser.username,
-        sender_avatar: currentUser.avatar
-      };
-
-      setMessages(prev => [...prev, tempMessage]);
-      setNewMessage('');
-      scrollToBottom();
-
-      const response = await api.post(`/conversations/${selectedConversation.id}/messages`, {
-        content: newMessage
       });
 
-      setMessages(prev => prev.map(msg => 
-        msg.id === tempMessage.id ? {
-          ...msg,
-          id: response.data.messageId
-        } : msg
-      ));
-
+      const messagesRes = await api.get(`/conversations/${selectedConversation.id}/messages`);
+      setMessages(messagesRes.data.messages || []);
+      setNewMessage('');
+      scrollToBottom();
     } catch (error) {
       console.error('Error sending message:', error);
-      setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
-      if (error.response?.status === 401) {
-        navigate('/login');
-      }
     }
   };
 
@@ -354,12 +269,14 @@ const Messages = ({ currentUser }) => {
       formData.append('image', selectedImage);
       formData.append('conversationId', selectedConversation.id);
 
-      await api.post(`/conversations/${selectedConversation.id}/messages/image`, formData, {
+      const response = await api.post(`/conversations/${selectedConversation.id}/messages/image`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
 
+      const messagesRes = await api.get(`/conversations/${selectedConversation.id}/messages`);
+      setMessages(messagesRes.data.messages || []);
       setSelectedImage(null);
       setImagePreview(null);
       scrollToBottom();
@@ -388,18 +305,6 @@ const Messages = ({ currentUser }) => {
     navigate(userId === currentUser.id ? '/profile' : `/user/${userId}`);
   };
 
-  const handleConversationSelect = async (conv) => {
-    if (selectedConversation?.id !== conv.id) {
-      setSelectedConversation(conv);
-      navigate(`/messages/${conv.id}`);
-      await loadConversationDetails(conv.id, conv.book_id);
-      
-      if (conv.unread_count > 0) {
-        await api.post(`/conversations/${conv.id}/mark-as-read`);
-      }
-    }
-  };
-
   if (loading) {
     return (
       <div className="message-loading">
@@ -410,14 +315,6 @@ const Messages = ({ currentUser }) => {
 
   return (
     <div className="message-container">
-      <div className="connection-status">
-        {isConnected ? (
-          <span style={{ color: 'green' }}>● Connecté</span>
-        ) : (
-          <span style={{ color: 'red' }}>● Déconnecté - Reconnexion en cours...</span>
-        )}
-      </div>
-
       <div className="message-conversation-list">
         <div className="message-list-header">
           <h2>Messages</h2>
@@ -429,7 +326,13 @@ const Messages = ({ currentUser }) => {
               <div
                 key={conv.id}
                 className={`message-conversation-item ${selectedConversation?.id === conv.id ? 'active' : ''}`}
-                onClick={() => handleConversationSelect(conv)}
+                onClick={async () => {
+                  if (selectedConversation?.id !== conv.id) {
+                    setSelectedConversation(conv);
+                    navigate(`/messages/${conv.id}`);
+                    await loadConversationDetails(conv.id, conv.book_id);
+                  }
+                }}
               >
                 {conv.interlocutor_avatar ? (
                   <img 
@@ -548,6 +451,7 @@ const Messages = ({ currentUser }) => {
                               className="message-image"
                               onClick={() => window.open(`http://localhost:5001${msg.image_url}`, '_blank')}
                             />
+
                           ) : (
                             <p>{msg.content}</p>
                           )}
@@ -669,20 +573,7 @@ const Messages = ({ currentUser }) => {
                     onClick={() => handleProfileClick(currentBook?.user?.id)}
                     style={{ cursor: 'pointer' }}
                   >
-                    <div style={{
-                      backgroundColor: '#FF5733',
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white',
-                      fontSize: '1rem',
-                      fontWeight: 'bold'
-                    }}>
-                      {currentBook?.user?.username?.charAt(0).toUpperCase() || 'U'}
-                    </div>
+                    {getDefaultAvatar(currentBook?.user?.username)}
                   </div>
                 )}
                 <p 
