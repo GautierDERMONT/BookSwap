@@ -1,30 +1,35 @@
 const socketIO = require('socket.io');
+const { pool } = require('./config/db');
 
-let io; // Variable globale pour stocker l'instance socket.io
+let io;
 
-// Initialisation de socket.io avec le serveur HTTP et configuration CORS
 const initSocket = (server) => {
   io = socketIO(server, {
-    cors: { origin: 'http://localhost:5173' }, // Autorisation CORS pour le front sur ce port
+    cors: {
+      origin: 'http://localhost:5173',
+      methods: ['GET', 'POST'],
+      credentials: true
+    },
+    path: '/socket.io'
   });
 
-  // Gestion des connexions clients
   io.on('connection', (socket) => {
     console.log('New client connected');
 
-    // Écoute de l'événement 'sendMessage' envoyé par un client
-    socket.on('sendMessage', (message) => {
-      io.emit('newMessage', message); // Diffusion du message à tous les clients connectés
+    socket.on('joinConversation', (conversationId) => {
+      socket.join(conversationId);
     });
 
-    // Gestion de la déconnexion d'un client
+    socket.on('leaveConversation', (conversationId) => {
+      socket.leave(conversationId);
+    });
+
     socket.on('disconnect', () => {
       console.log('Client disconnected');
     });
   });
 };
 
-// Fonction pour récupérer l'instance socket.io (utile dans d'autres fichiers)
 const getIO = () => {
   if (!io) throw new Error('Socket.io not initialized!');
   return io;

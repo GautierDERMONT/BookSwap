@@ -20,7 +20,7 @@
 
 - Node.js 
 - Git  
-- Optionnel: WampServer (ou équivalent pour héberger MySQL en local)
+- Optionnel: WampServer (ou équivalent pour héberger la BDD en local)
 
 ---
 
@@ -50,11 +50,11 @@
    ```bash
    npm install
    ```
-   quelques vulnérabilités peuvent s'afficher mais c'est normal
+   Quelques vulnérabilités peuvent s'afficher, c'est normal.
 
 4. **Base de donnée:**
 
- - Base donnée hébergé sur Railway, importation des tables grâce à MySQL Workbench
+ - Base donnée hébergé sur Railway, importation des tables grâce à MySQL Workbench.
 
 
 Optionnel: 
@@ -64,7 +64,7 @@ Optionnel:
    - Vérifiez les fichiers de configuration :
      - `bookswap/backend/.env`
      - `bookswap/backend/config/db.js`
-   - Créer une base de donnée "bookswap" et importer le fichier SQL pour initialiser la   base :
+   - Créer une base de donnée "bookswap" et importer le fichier SQL pour initialiser la base :
 
     [📥 Télécharger la BDD](/bookswap.sql)
 
@@ -113,7 +113,7 @@ Optionnel:
 - **Filtrage des livres**  
   ![Filtrage](/screenshots/filters.png)
 
-- **Profil utilisateur )**  
+- **Profil utilisateur**  
   ![Page Profile 1/2](/screenshots/Profile1.png)
   
   ![Page Profile 2/2](/screenshots/Profile2.png)

@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import api from '../services/api';
+import { io } from 'socket.io-client';
 import './Messages.css';
 import { FiMessageSquare, FiChevronRight, FiClock, FiCheck, FiMapPin, FiImage } from 'react-icons/fi';
 
 const Messages = ({ currentUser }) => {
+  const [socket, setSocket] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -20,29 +22,79 @@ const Messages = ({ currentUser }) => {
   const { id } = useParams();
   const [initialSelectionDone, setInitialSelectionDone] = useState(false);
 
-  const getDefaultAvatar = (username) => {
-    if (!username) return 'U';
-    const firstLetter = username.charAt(0).toUpperCase();
-    const colors = ['#FF5733', '#33FF57', '#3357FF', '#F333FF', '#33FFF3'];
-    const color = colors[firstLetter.charCodeAt(0) % colors.length];
-    
-    return (
-      <div style={{
-        backgroundColor: color,
-        width: '32px',
-        height: '32px',
-        borderRadius: '50%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'white',
-        fontSize: '1rem',
-        fontWeight: 'bold'
-      }}>
-        {firstLetter}
-      </div>
-    );
-  };
+  useEffect(() => {
+    const newSocket = io('http://localhost:5001', {
+      withCredentials: true,
+      path: '/socket.io',
+      transports: ['websocket']
+    });
+
+    newSocket.on('connect', () => {
+      console.log('Connected to Socket.IO');
+    });
+
+    newSocket.on('connect_error', (err) => {
+      console.error('Connection error:', err);
+    });
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!socket || !selectedConversation) return;
+
+    socket.emit('joinConversation', selectedConversation.id);
+
+    socket.on('newMessage', (message) => {
+      if (message.conversation_id === selectedConversation.id) {
+        setMessages(prev => [...prev, message]);
+        scrollToBottom();
+      }
+      
+      setConversations(prev => prev.map(conv => {
+        if (conv.id === message.conversation_id) {
+          return {
+            ...conv,
+            last_message: message.content || '[Image]',
+            last_message_date: message.created_at,
+            unread_count: message.sender_id !== currentUser.id 
+              ? conv.unread_count + 1 
+              : conv.unread_count
+          };
+        }
+        return conv;
+      }));
+    });
+
+    socket.on('messagesRead', ({ conversationId }) => {
+      if (conversationId === selectedConversation.id) {
+        setMessages(prev => prev.map(msg => ({
+          ...msg,
+          is_read: true
+        })));
+      }
+    });
+
+    socket.on('conversationDeleted', ({ conversationId }) => {
+      if (conversationId === selectedConversation?.id) {
+        setSelectedConversation(null);
+        setMessages([]);
+        setCurrentBook(null);
+      }
+      setConversations(prev => prev.filter(c => c.id !== conversationId));
+    });
+
+    return () => {
+      socket.off('newMessage');
+      socket.off('messagesRead');
+      socket.off('conversationDeleted');
+      socket.emit('leaveConversation', selectedConversation.id);
+    };
+  }, [socket, selectedConversation, currentUser]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -134,34 +186,6 @@ const Messages = ({ currentUser }) => {
     fetchData();
   }, [location.state, id]);
 
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      if (selectedConversation) {
-        try {
-          const messagesRes = await api.get(`/conversations/${selectedConversation.id}/messages`);
-          setMessages(messagesRes.data.messages || []);
-        } catch (error) {
-          console.error('Error refreshing messages:', error);
-        }
-      }
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, [selectedConversation]);
-
-  useEffect(() => {
-    if (selectedConversation) {
-      api.post(`/conversations/${selectedConversation.id}/mark-as-read`);
-      
-      setConversations(prev => prev.map(conv => {
-        if (conv.id === selectedConversation.id) {
-          return { ...conv, unread_count: 0 };
-        }
-        return conv;
-      }));
-    }
-  }, [selectedConversation]);
-
   const loadConversationDetails = async (convId, bookId) => {
     try {
       const [messagesRes, bookRes] = await Promise.all([
@@ -227,15 +251,13 @@ const Messages = ({ currentUser }) => {
   };
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation) return;
+    if (!newMessage.trim() || !selectedConversation || !socket) return;
 
     try {
       await api.post(`/conversations/${selectedConversation.id}/messages`, {
         content: newMessage,
       });
 
-      const messagesRes = await api.get(`/conversations/${selectedConversation.id}/messages`);
-      setMessages(messagesRes.data.messages || []);
       setNewMessage('');
       scrollToBottom();
     } catch (error) {
@@ -269,14 +291,12 @@ const Messages = ({ currentUser }) => {
       formData.append('image', selectedImage);
       formData.append('conversationId', selectedConversation.id);
 
-      const response = await api.post(`/conversations/${selectedConversation.id}/messages/image`, formData, {
+      await api.post(`/conversations/${selectedConversation.id}/messages/image`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
 
-      const messagesRes = await api.get(`/conversations/${selectedConversation.id}/messages`);
-      setMessages(messagesRes.data.messages || []);
       setSelectedImage(null);
       setImagePreview(null);
       scrollToBottom();
@@ -451,7 +471,6 @@ const Messages = ({ currentUser }) => {
                               className="message-image"
                               onClick={() => window.open(`http://localhost:5001${msg.image_url}`, '_blank')}
                             />
-
                           ) : (
                             <p>{msg.content}</p>
                           )}
@@ -573,7 +592,20 @@ const Messages = ({ currentUser }) => {
                     onClick={() => handleProfileClick(currentBook?.user?.id)}
                     style={{ cursor: 'pointer' }}
                   >
-                    {getDefaultAvatar(currentBook?.user?.username)}
+                    <div style={{
+                      backgroundColor: '#FF5733',
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontSize: '1rem',
+                      fontWeight: 'bold'
+                    }}>
+                      {currentBook?.user?.username?.charAt(0).toUpperCase() || 'U'}
+                    </div>
                   </div>
                 )}
                 <p 
