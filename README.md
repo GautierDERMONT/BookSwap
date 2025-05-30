@@ -19,7 +19,6 @@
 ### Prérequis
 
 - Node.js 
-- MySQL  
 - Git  
 - Optionnel: WampServer (ou équivalent pour héberger MySQL en local)
 
@@ -100,7 +99,7 @@ Optionnel:
 - [x] Gestion du profil utilisateur  
 - [x] Catalogue de livres  
 - [x] Ajout de livres à échanger  
-- [x] Recherche / Filtrage de livres  
+- [x] Recherche avec suggestions / Filtrage de livres  
 - [x] Système de messagerie  
 - [x] Ajout de livres en favoris  
 
@@ -114,9 +113,14 @@ Optionnel:
 - **Filtrage des livres**  
   ![Filtrage](/screenshots/filters.png)
 
-- **Profil utilisateur (1/2)**  
+- **Profil utilisateur )**  
   ![Page Profile 1/2](/screenshots/Profile1.png)
+  
   ![Page Profile 2/2](/screenshots/Profile2.png)
+
+  ![Page Profile 1.1/2](/screenshots/Profile1.1.png)
+
+  
 
 - **Favoris**  
 ![Page Favoris](/screenshots/favorites.png)
@@ -126,6 +130,7 @@ Optionnel:
 
 - **Ajout d’un livre**  
   ![Page Ajout 1/2](/screenshots/addbook1.png)
+
   ![Page Ajout 2/2](/screenshots/addbook2.png)
 
 
