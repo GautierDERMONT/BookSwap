@@ -216,6 +216,9 @@ router.get('/conversations/:conversationId/messages', authenticate, async (req, 
       [conversationId, userId]
     );
 
+    const io = getIO();
+    io.emit('messagesRead', { conversationId, userId });
+
     res.json({ messages });
   } catch (err) {
     console.error('Error fetching messages:', err);
@@ -261,6 +264,9 @@ router.post('/conversations/:conversationId/messages', authenticate, async (req,
       sender_name: user[0].username,
       sender_avatar: user[0].avatar
     });
+
+    // Émettre un événement pour mettre à jour la liste des conversations
+    io.emit('updateConversations', { userId });
 
     res.status(201).json({
       messageId: result.insertId
@@ -315,6 +321,9 @@ router.post('/conversations/:conversationId/messages/image',
         sender_name: user[0].username,
         sender_avatar: user[0].avatar
       });
+
+      // Émettre un événement pour mettre à jour la liste des conversations
+      io.emit('updateConversations', { userId });
 
       res.status(201).json({
         messageId: result.insertId,

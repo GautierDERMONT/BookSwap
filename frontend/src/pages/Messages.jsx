@@ -6,7 +6,6 @@ import './Messages.css';
 import { FiMessageSquare, FiChevronRight, FiClock, FiCheck, FiMapPin, FiImage } from 'react-icons/fi';
 
 const Messages = ({ currentUser }) => {
-  const [socket, setSocket] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -16,6 +15,8 @@ const Messages = ({ currentUser }) => {
   const [interlocutor, setInterlocutor] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [socket, setSocket] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -23,29 +24,45 @@ const Messages = ({ currentUser }) => {
   const [initialSelectionDone, setInitialSelectionDone] = useState(false);
 
   useEffect(() => {
-    const newSocket = io('http://localhost:5001', {
+    const socketInstance = io('http://localhost:5001', {
       withCredentials: true,
-      extraHeaders: {
-        "Authorization": `Bearer ${localStorage.getItem('token')}`
-      },
       path: "/socket.io",
-      transports: ['websocket', 'polling'],
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000
+      transports: ['websocket'],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      autoConnect: true
     });
 
-    newSocket.on('connect', () => {
-      console.log('Connected to Socket.IO');
+    socketInstance.on('connect', () => {
+      console.log('Socket connected');
+      setIsConnected(true);
+      setSocket(socketInstance);
     });
 
-    newSocket.on('connect_error', (err) => {
+    socketInstance.on('disconnect', (reason) => {
+      console.log('Socket disconnected:', reason);
+      setIsConnected(false);
+      if (reason === 'io server disconnect') {
+        socketInstance.connect();
+      }
+    });
+
+    socketInstance.on('connect_error', (err) => {
       console.error('Connection error:', err);
+      setTimeout(() => {
+        socketInstance.connect();
+      }, 1000);
     });
 
-    setSocket(newSocket);
+    setSocket(socketInstance);
 
     return () => {
-      newSocket.disconnect();
+      socketInstance.off('connect');
+      socketInstance.off('disconnect');
+      socketInstance.off('connect_error');
+      socketInstance.disconnect();
     };
   }, []);
 
@@ -67,7 +84,7 @@ const Messages = ({ currentUser }) => {
             last_message: message.content || '[Image]',
             last_message_date: message.created_at,
             unread_count: message.sender_id !== currentUser.id 
-              ? conv.unread_count + 1 
+              ? (conv.unread_count || 0) + 1 
               : conv.unread_count
           };
         }
@@ -75,30 +92,42 @@ const Messages = ({ currentUser }) => {
       }));
     };
 
-    socket.on('newMessage', handleNewMessage);
-
-    socket.on('messagesRead', ({ conversationId }) => {
+    const handleMessagesRead = ({ conversationId }) => {
       if (conversationId === selectedConversation.id) {
         setMessages(prev => prev.map(msg => ({
           ...msg,
           is_read: true
         })));
       }
-    });
 
-    socket.on('conversationDeleted', ({ conversationId }) => {
+      setConversations(prev => prev.map(conv => {
+        if (conv.id === conversationId) {
+          return {
+            ...conv,
+            unread_count: 0
+          };
+        }
+        return conv;
+      }));
+    };
+
+    const handleConversationDeleted = ({ conversationId }) => {
       if (conversationId === selectedConversation?.id) {
         setSelectedConversation(null);
         setMessages([]);
         setCurrentBook(null);
       }
       setConversations(prev => prev.filter(c => c.id !== conversationId));
-    });
+    };
+
+    socket.on('newMessage', handleNewMessage);
+    socket.on('messagesRead', handleMessagesRead);
+    socket.on('conversationDeleted', handleConversationDeleted);
 
     return () => {
       socket.off('newMessage', handleNewMessage);
-      socket.off('messagesRead');
-      socket.off('conversationDeleted');
+      socket.off('messagesRead', handleMessagesRead);
+      socket.off('conversationDeleted', handleConversationDeleted);
       socket.emit('leaveConversation', selectedConversation.id);
     };
   }, [socket, selectedConversation, currentUser]);
@@ -209,15 +238,13 @@ const Messages = ({ currentUser }) => {
         });
       }
 
-      if (selectedConversation?.id === convId) {
-        const conv = conversations.find(c => c.id === convId);
-        if (conv) {
-          setInterlocutor({
-            id: conv.interlocutor_id,
-            username: conv.interlocutor_name,
-            avatar: conv.interlocutor_avatar
-          });
-        }
+      const conv = conversations.find(c => c.id === convId);
+      if (conv) {
+        setInterlocutor({
+          id: conv.interlocutor_id,
+          username: conv.interlocutor_name,
+          avatar: conv.interlocutor_avatar
+        });
       }
       
       scrollToBottom();
@@ -258,17 +285,46 @@ const Messages = ({ currentUser }) => {
   };
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation || !socket) return;
+    if (!newMessage.trim() || !selectedConversation) return;
+    
+    if (!isConnected || !socket) {
+      alert('Connection perdue. Veuillez réessayer.');
+      return;
+    }
 
     try {
-      await api.post(`/conversations/${selectedConversation.id}/messages`, {
+      const tempMessage = {
+        id: `temp-${Date.now()}`,
         content: newMessage,
-      });
+        sender_id: currentUser.id,
+        conversation_id: selectedConversation.id,
+        created_at: new Date().toISOString(),
+        is_read: true,
+        sender_name: currentUser.username,
+        sender_avatar: currentUser.avatar
+      };
 
+      setMessages(prev => [...prev, tempMessage]);
       setNewMessage('');
       scrollToBottom();
+
+      const response = await api.post(`/conversations/${selectedConversation.id}/messages`, {
+        content: newMessage
+      });
+
+      setMessages(prev => prev.map(msg => 
+        msg.id === tempMessage.id ? {
+          ...msg,
+          id: response.data.messageId
+        } : msg
+      ));
+
     } catch (error) {
       console.error('Error sending message:', error);
+      setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
+      if (error.response?.status === 401) {
+        navigate('/login');
+      }
     }
   };
 
@@ -332,6 +388,18 @@ const Messages = ({ currentUser }) => {
     navigate(userId === currentUser.id ? '/profile' : `/user/${userId}`);
   };
 
+  const handleConversationSelect = async (conv) => {
+    if (selectedConversation?.id !== conv.id) {
+      setSelectedConversation(conv);
+      navigate(`/messages/${conv.id}`);
+      await loadConversationDetails(conv.id, conv.book_id);
+      
+      if (conv.unread_count > 0) {
+        await api.post(`/conversations/${conv.id}/mark-as-read`);
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="message-loading">
@@ -342,6 +410,14 @@ const Messages = ({ currentUser }) => {
 
   return (
     <div className="message-container">
+      <div className="connection-status">
+        {isConnected ? (
+          <span style={{ color: 'green' }}>● Connecté</span>
+        ) : (
+          <span style={{ color: 'red' }}>● Déconnecté - Reconnexion en cours...</span>
+        )}
+      </div>
+
       <div className="message-conversation-list">
         <div className="message-list-header">
           <h2>Messages</h2>
@@ -353,13 +429,7 @@ const Messages = ({ currentUser }) => {
               <div
                 key={conv.id}
                 className={`message-conversation-item ${selectedConversation?.id === conv.id ? 'active' : ''}`}
-                onClick={async () => {
-                  if (selectedConversation?.id !== conv.id) {
-                    setSelectedConversation(conv);
-                    navigate(`/messages/${conv.id}`);
-                    await loadConversationDetails(conv.id, conv.book_id);
-                  }
-                }}
+                onClick={() => handleConversationSelect(conv)}
               >
                 {conv.interlocutor_avatar ? (
                   <img 
