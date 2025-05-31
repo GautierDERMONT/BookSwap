@@ -524,7 +524,7 @@ const Messages = ({ currentUser }) => {
           <div className="message-book-image">
             <img
               src={currentBook.images?.[0] 
-                ? `http://localhost:5001/uploads/${currentBook.images[0]}`
+                ? `http://localhost:5001${currentBook.images[0]}`
                 : '/placeholder.jpg'
               }
               alt={currentBook.title}

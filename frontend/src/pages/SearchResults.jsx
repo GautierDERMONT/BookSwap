@@ -28,7 +28,16 @@ export default function SearchResults({ isAuthenticated, currentUser, onOpenLogi
         url = url.endsWith('&') ? url.slice(0, -1) : url;
 
         const res = await api.get(url);
-        setBooks(res.data.books);
+        const books = res.data.books.map(book => ({
+          ...book,
+          user: {
+            id: book.user_id,
+            username: book.username,
+            avatar: book.avatar,
+            email: book.email
+          }
+        }));
+        setBooks(books);
         setLoading(false);
       } catch (err) {
         console.error('Search error:', err);

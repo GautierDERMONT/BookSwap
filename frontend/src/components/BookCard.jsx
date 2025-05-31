@@ -3,6 +3,52 @@ import { useNavigate } from 'react-router-dom';
 import './BookCard.css';
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
 
+const UserAvatar = ({ avatar, username, size = 20 }) => {
+  if (!avatar && !username) return null;
+  
+  if (!avatar) {
+    const firstLetter = username?.charAt(0).toUpperCase() || '?';
+    const colors = ['#FF5733', '#33FF57', '#3357FF', '#F333FF', '#33FFF3'];
+    const color = colors[firstLetter.charCodeAt(0) % colors.length];
+    
+    return (
+      <div 
+        style={{ 
+          backgroundColor: color,
+          width: `${size}px`,
+          height: `${size}px`,
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'white',
+          fontWeight: 'bold'
+        }}
+      >
+        {firstLetter}
+      </div>
+    );
+  }
+  
+  return (
+    <img 
+      src={avatar.startsWith('/uploads') 
+        ? `http://localhost:5001${avatar}`
+        : `http://localhost:5001/uploads/${avatar}`}
+      alt={username}
+      style={{
+        width: `${size}px`,
+        height: `${size}px`,
+        borderRadius: '50%',
+        objectFit: 'cover'
+      }}
+      onError={(e) => {
+        e.target.style.display = 'none';
+      }}
+    />
+  );
+};
+
 export default function BookCard({ book, isAuthenticated, currentUser, onRequireLogin, hideOwnerBadge }) {
   const [isFavorite, setIsFavorite] = useState(false);
   const [showFavoriteModal, setShowFavoriteModal] = useState(false);
@@ -13,6 +59,13 @@ export default function BookCard({ book, isAuthenticated, currentUser, onRequire
   const storageKey = userId ? `favorite-${userId}-${book.id}` : null;
   const navigate = useNavigate();
   const isOwner = currentUser && book.users_id === currentUser.id;
+
+  const ownerInfo = {
+    id: book.user_id || book.user?.id,
+    username: book.username || book.user?.username,
+    avatar: book.avatar || book.user?.avatar,
+    email: book.email || book.user?.email
+  };
 
   useEffect(() => {
     if (storageKey) {
@@ -81,11 +134,31 @@ export default function BookCard({ book, isAuthenticated, currentUser, onRequire
     setImageError(true);
   };
 
+  const handleOwnerClick = (e) => {
+    e.stopPropagation();
+    if (ownerInfo.id) {
+      navigate(`/user/${ownerInfo.id}`);
+    }
+  };
+
   return (
     <div className="book-card" onClick={() => navigate(`/books/${book.id}`)} data-id={book.id}>
-      {!hideOwnerBadge && isOwner && (
-        <div className="owner-badge">Mon livre</div>
+      {!hideOwnerBadge && (isOwner || ownerInfo.username) && (
+        <div 
+          className={`owner-badge ${isOwner ? 'my-book-badge' : ''}`}
+          onClick={handleOwnerClick}
+        >
+          <UserAvatar 
+            avatar={ownerInfo.avatar} 
+            username={ownerInfo.username}
+            size={20}
+          />
+          <span className="owner-name">
+            {isOwner ? 'Mon livre' : ownerInfo.username}
+          </span>
+        </div>
       )}
+
       <div className="book-image-container">
         {imageUrl ? (
           <>

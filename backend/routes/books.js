@@ -86,10 +86,15 @@ router.get('/search', async (req, res) => {
     let sql = `
       SELECT 
         b.*, 
+        u.id as user_id,
+        u.username,
+        u.avatar,
+        u.email,
         (SELECT GROUP_CONCAT(image_path ORDER BY id ASC) 
-         FROM book_images 
-         WHERE book_id = b.id) as images
+        FROM book_images 
+        WHERE book_id = b.id) as images
       FROM book b
+      LEFT JOIN users u ON b.users_id = u.id
       WHERE 1=1
     `;
     
