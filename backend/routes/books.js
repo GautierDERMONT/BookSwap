@@ -59,7 +59,7 @@ router.post('/', authenticate, upload.array('images', 3), async (req, res) => {
     }, req.userId);
 
     const images = req.files.map(file => ({
-      path: file.filename
+      path: `/uploads/${file.filename}`
     }));
     
     await Book.addImages(bookId, images);
@@ -162,66 +162,59 @@ router.get('/suggestions', async (req, res) => {
 
 router.get('/', async (req, res) => {
   try {
-    const books = await Book.getAllBooks();
-    const booksWithImageUrls = books.map(book => ({
-      ...book,
-      images: book.images.map(img => {
-        const filename = path.basename(img);
-        return `/uploads/${filename}`;
-      }).filter(img => img !== '/uploads/')
+    let query = `
+      SELECT 
+        b.*, 
+        u.username,
+        u.avatar,
+        (SELECT GROUP_CONCAT(image_path ORDER BY id ASC) FROM book_images WHERE book_id = b.id) as images
+      FROM book b
+      LEFT JOIN users u ON b.users_id = u.id
+      ${req.query.userId ? 'WHERE b.users_id = ?' : ''}
+      GROUP BY b.id
+    `;
+
+    const params = req.query.userId ? [req.query.userId] : [];
+
+    const [rows] = await pool.query(query, params);
+
+    const books = rows.map(row => ({
+      ...row,
+      images: row.images ? row.images.split(',').map(img => `/uploads/${path.basename(img)}`).filter(img => img !== '/uploads/') : []
     }));
-    res.json({ books: booksWithImageUrls });
+
+    res.json({ books });
   } catch (err) {
-    console.error('Erreur lors de la récupération des livres:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    console.error('Error fetching books:', err);
+    res.status(500).json({ error: 'Error fetching books' });
   }
 });
 
-router.delete('/:id', authenticate, async (req, res) => {
+router.get('/user/:userId', async (req, res) => {
   try {
-    const bookId = req.params.id;
-    const userId = req.userId;
-
-    const [book] = await pool.query(`
-      SELECT b.*, u.username, u.avatar 
+    const query = `
+      SELECT 
+        b.*, 
+        u.username,
+        u.avatar,
+        (SELECT GROUP_CONCAT(image_path ORDER BY id ASC) FROM book_images WHERE book_id = b.id) as images
       FROM book b
-      JOIN users u ON b.users_id = u.id
-      WHERE b.id = ?
-    `, [bookId]);
-    
-    if (!book || book.length === 0) {
-      return res.status(404).json({ error: 'Livre non trouvé' });
-    }
+      LEFT JOIN users u ON b.users_id = u.id
+      WHERE b.users_id = ?
+      GROUP BY b.id
+    `;
 
-    if (book[0].users_id !== userId) {
-      return res.status(403).json({ error: 'Non autorisé - Vous n\'êtes pas le propriétaire de ce livre' });
-    }
+    const [rows] = await pool.query(query, [req.params.userId]);
 
-    const [images] = await pool.query(
-      'SELECT image_path FROM book_images WHERE book_id = ?',
-      [bookId]
-    );
+    const books = rows.map(row => ({
+      ...row,
+      images: row.images ? row.images.split(',').map(img => `/uploads/${path.basename(img)}`).filter(img => img !== '/uploads/') : []
+    }));
 
-    images.forEach(image => {
-      if (image.image_path) {
-        const filename = path.basename(image.image_path);
-        const fullPath = path.join(__dirname, '../uploads', filename);
-        if (fs.existsSync(fullPath)) {
-          fs.unlinkSync(fullPath);
-        }
-      }
-    });
-
-    await pool.query('DELETE FROM book_images WHERE book_id = ?', [bookId]);
-    await pool.query('DELETE FROM book WHERE id = ?', [bookId]);
-
-    res.json({ success: true, message: 'Livre et images supprimés avec succès' });
+    res.json({ books });
   } catch (err) {
-    console.error('Erreur lors de la suppression:', err);
-    res.status(500).json({ 
-      error: 'Erreur lors de la suppression du livre',
-      details: err.message 
-    });
+    console.error('Error fetching user books:', err);
+    res.status(500).json({ error: 'Error fetching user books' });
   }
 });
 
@@ -248,7 +241,14 @@ router.get('/:id', async (req, res) => {
 
     const book = {
       ...rows[0],
-      images: rows[0].images ? rows[0].images.split(',') : [],
+      images: rows[0].images 
+        ? rows[0].images.split(',').map(img => {
+            if (!img.startsWith('/uploads/')) {
+              return `/uploads/${img}`;
+            }
+            return img;
+          })
+        : [],
       user: {
         id: rows[0].user_id,
         username: rows[0].username,
@@ -257,7 +257,6 @@ router.get('/:id', async (req, res) => {
     };
 
     res.json({ book });
-    
   } catch (err) {
     console.error('Erreur SQL:', err);
     res.status(500).json({ 
@@ -332,61 +331,32 @@ router.put('/:id', authenticate, upload.array('images', 3), async (req, res) => 
   }
 });
 
-router.get('/', async (req, res) => {
+router.delete('/:id', authenticate, async (req, res) => {
   try {
-    let query = `
-      SELECT 
-        b.*, 
-        u.username,
-        u.avatar,
-        (SELECT GROUP_CONCAT(image_path ORDER BY id ASC) FROM book_images WHERE book_id = b.id) as images
-      FROM book b
-      LEFT JOIN users u ON b.users_id = u.id
-      ${req.query.userId ? 'WHERE b.users_id = ?' : ''}
-      GROUP BY b.id
-    `;
+    const bookId = req.params.id;
+    const userId = req.userId;
 
-    const params = req.query.userId ? [req.query.userId] : [];
+    await Book.delete(bookId, userId);
 
-    const [rows] = await pool.query(query, params);
-
-    const books = rows.map(row => ({
-      ...row,
-      images: row.images ? row.images.split(',').map(img => `/uploads/${path.basename(img)}`).filter(img => img !== '/uploads/') : []
-    }));
-
-    res.json({ books });
+    res.json({ 
+      success: true, 
+      message: 'Livre supprimé avec succès' 
+    });
   } catch (err) {
-    console.error('Error fetching books:', err);
-    res.status(500).json({ error: 'Error fetching books' });
-  }
-});
-
-router.get('/user/:userId', async (req, res) => {
-  try {
-    const query = `
-      SELECT 
-        b.*, 
-        u.username,
-        u.avatar,
-        (SELECT GROUP_CONCAT(image_path ORDER BY id ASC) FROM book_images WHERE book_id = b.id) as images
-      FROM book b
-      LEFT JOIN users u ON b.users_id = u.id
-      WHERE b.users_id = ?
-      GROUP BY b.id
-    `;
-
-    const [rows] = await pool.query(query, [req.params.userId]);
-
-    const books = rows.map(row => ({
-      ...row,
-      images: row.images ? row.images.split(',').map(img => `/uploads/${path.basename(img)}`).filter(img => img !== '/uploads/') : []
-    }));
-
-    res.json({ books });
-  } catch (err) {
-    console.error('Error fetching user books:', err);
-    res.status(500).json({ error: 'Error fetching user books' });
+    console.error('Erreur lors de la suppression:', err);
+    
+    if (err.message === 'Livre non trouvé') {
+      return res.status(404).json({ error: err.message });
+    }
+    
+    if (err.message === 'Non autorisé') {
+      return res.status(403).json({ error: err.message });
+    }
+    
+    res.status(500).json({ 
+      error: 'Erreur lors de la suppression du livre',
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 });
 

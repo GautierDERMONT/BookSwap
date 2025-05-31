@@ -21,8 +21,10 @@ import './BookDetails.css';
 
 const API_URL = 'http://localhost:5001';
 
-const getImageUrl = (img) =>
-  img?.startsWith('/uploads') ? `${API_URL}${img}` : `${API_URL}/uploads/${img || 'placeholder.jpg'}`;
+const getImageUrl = (img) => {
+  if (!img) return `${API_URL}/placeholder.jpg`;
+  return img.startsWith('/uploads/') ? `${API_URL}${img}` : `${API_URL}/uploads/${img}`;
+};
 
 const BookDetails = ({ currentUser, executeAfterAuth }) => {
   const { id } = useParams();
