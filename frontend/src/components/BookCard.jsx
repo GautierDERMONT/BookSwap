@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import './BookCard.css';
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
 
+
+
 const UserAvatar = ({ avatar, username, size = 20 }) => {
   if (!avatar && !username) return null;
   
@@ -61,10 +63,9 @@ export default function BookCard({ book, isAuthenticated, currentUser, onRequire
   const isOwner = currentUser && book.users_id === currentUser.id;
 
   const ownerInfo = {
-    id: book.user_id || book.user?.id,
+    id: book.user_id || book.users_id || book.user?.id, 
     username: book.username || book.user?.username,
     avatar: book.avatar || book.user?.avatar,
-    email: book.email || book.user?.email
   };
 
   useEffect(() => {
@@ -136,6 +137,7 @@ export default function BookCard({ book, isAuthenticated, currentUser, onRequire
 
   const handleOwnerClick = (e) => {
     e.stopPropagation();
+    console.log("Navigating to user profile:", ownerInfo.id); // Ajoutez ce log
     if (ownerInfo.id) {
       navigate(`/user/${ownerInfo.id}`);
     }
