@@ -190,11 +190,11 @@
 }
 
 .my-book-badge {
-    background-color: rgba(12, 101, 70, 0.8);
+    background-color: rgba(78, 154, 94, 0.8); /* #4e9a5e avec 80% d'opacité */
 }
 
 .my-book-badge:hover {
-    background-color: rgba(12, 101, 70, 0.9);
+    background-color: rgba(78, 154, 94, 0.9); /* Version plus opaque au survol */
 }
 
 @media (max-width: 768px) {
