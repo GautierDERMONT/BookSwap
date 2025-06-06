@@ -18,6 +18,14 @@
   white-space: nowrap;
 }
 
+
+.favorites-page h2 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+}
+
 .favorites-page h2::before,
 .favorites-page h2::after {
   content: "";

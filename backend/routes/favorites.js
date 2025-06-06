@@ -6,22 +6,33 @@ const { pool } = require('../config/db');
 router.post('/favorites', async (req, res) => {
   const { userId, bookId } = req.body;
 
-  // Vérification des paramètres requis
   if (!userId || !bookId) {
     return res.status(400).json({ error: 'userId and bookId are required' });
   }
 
   try {
-    // Insertion du favori dans la base de données
+    // Vérifier d'abord si le favori existe déjà
+    const [existing] = await pool.query(
+      'SELECT * FROM favorites WHERE user_id = ? AND book_id = ?',
+      [userId, bookId]
+    );
+
+    if (existing.length > 0) {
+      return res.status(200).json({ message: 'Ce livre est déjà dans vos favoris' });
+    }
+
+    // Si le favori n'existe pas, l'ajouter
     await pool.query(
       'INSERT INTO favorites (user_id, book_id) VALUES (?, ?)',
       [userId, bookId]
     );
     res.status(201).json({ message: 'Favori ajouté' });
   } catch (err) {
-    // Gestion des erreurs serveur lors de l'insertion
     console.error('Erreur ajout favori:', err);
-    res.status(500).json({ error: 'Erreur serveur' });
+    res.status(500).json({ 
+      error: 'Erreur serveur',
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 });
 
@@ -53,7 +64,6 @@ router.get('/favorites/:userId', async (req, res) => {
   const { userId } = req.params;
 
   try {
-    // Requête pour récupérer les livres favoris avec leurs images
     const query = `
       SELECT 
         b.*,
@@ -66,20 +76,22 @@ router.get('/favorites/:userId', async (req, res) => {
 
     const [rows] = await pool.query(query, [userId]);
 
-    // Formatage des images sous forme de tableau d'URLs accessibles
     const favorites = rows.map(row => ({
       ...row,
       images: row.images
         ? row.images
             .split(',')
-            .map(img => `/uploads/${img.trim()}`)
+            .map(img => {
+              // Nettoyer le chemin en supprimant les doublons
+              const cleanPath = img.trim().replace(/^\/uploads\//, '');
+              return `/uploads/${cleanPath}`;
+            })
             .filter(img => img !== '/uploads/')
         : []
     }));
 
     res.status(200).json(favorites);
   } catch (err) {
-    // Gestion des erreurs serveur lors de la récupération
     console.error('Erreur récupération favoris:', err);
     res.status(500).json({ error: 'Erreur serveur' });
   }

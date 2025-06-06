@@ -83,6 +83,22 @@
   box-shadow: 0 4px 8px rgba(12, 101, 70, 0.2);
 }
 
+
+.home-content h1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px; /* Espace entre l'icône et le texte */
+}
+
+.book-icon {
+  color: #4e9a5e; /* Couleur qui matche votre thème */
+    animation: bookTilt 3s infinite ease-in-out;
+
+}
+
+
+
 .home-add-book-button:hover {
   background-color: #4e9a5e;
   transform: translateY(-3px);

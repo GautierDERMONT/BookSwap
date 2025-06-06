@@ -22,7 +22,6 @@ import './BookDetails.css';
 const API_URL = 'http://localhost:5001';
 
 const getImageUrl = (img) => {
-  if (!img) return `${API_URL}/placeholder.jpg`;
   return img.startsWith('/uploads/') ? `${API_URL}${img}` : `${API_URL}/uploads/${img}`;
 };
 
@@ -63,7 +62,7 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
         const { data } = await axios.get(`${API_URL}/api/books/${id}`);
         const images = data.book.images?.length
           ? data.book.images.map(getImageUrl)
-          : [`${API_URL}/placeholder.jpg`];
+          : [];
         setBook({ ...data.book, images });
       } catch (error) {
         setBook(null);

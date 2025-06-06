@@ -47,6 +47,28 @@
     min-width: 220px;
 }
 
+
+.edit-book-button {
+  background: #4e9a5e;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 500;
+  box-shadow: 0 2px 5px rgba(78, 154, 94, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-book-button:hover {
+  background: #3e8a4e;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(78, 154, 94, 0.4);
+}
+
 .profile-avatar-container {
     width: 180px;
     height: 180px;

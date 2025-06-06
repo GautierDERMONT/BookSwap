@@ -216,7 +216,7 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
                 onClick={handleFavoritesClick}
                 title="Favoris"
               >
-                <Heart size={20} />
+                <Heart size={22} />
               </button>
 
               {/* Icône messagerie avec badge nombre messages non lus */}
@@ -225,7 +225,7 @@ const Header = ({ isAuthenticated, currentUser, onOpenLogin, onOpenSignup, onLog
                 onClick={handleMessageClick}
                 title="Messagerie"
               >
-                <MessageCircle size={20} />
+                <MessageCircle size={22} />
                 {unreadMessages > 0 && (
                   <span className="header-unread-badge">{unreadMessages}</span> 
                 )}

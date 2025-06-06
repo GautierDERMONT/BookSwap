@@ -78,14 +78,15 @@ export default function BookCard({ book, isAuthenticated, currentUser, onRequire
   const imageUrl = useMemo(() => {
     if (book.images && book.images.length > 0) {
       const firstImage = book.images[0];
-      return firstImage.startsWith('/uploads')
-        ? `http://localhost:5001${firstImage}`
-        : `http://localhost:5001/uploads/${firstImage}`;
+      // Nettoyer le chemin en supprimant les doublons de /uploads/
+      const cleanPath = firstImage.replace(/^\/uploads\//, '');
+      return `http://localhost:5001/uploads/${cleanPath}`;
     }
     
     if (book.image_url) {
       if (book.image_url.startsWith('http')) return book.image_url;
-      return `http://localhost:5001${book.image_url.startsWith('/') ? '' : '/'}${book.image_url}`;
+      const cleanPath = book.image_url.replace(/^\/uploads\//, '');
+      return `http://localhost:5001/uploads/${cleanPath}`;
     }
     return null;
   }, [book.images, book.image_url]);
@@ -97,18 +98,8 @@ export default function BookCard({ book, isAuthenticated, currentUser, onRequire
       return;
     }
 
-    const newFavorite = !isFavorite;
-    setIsFavorite(newFavorite);
-
-    if (storageKey) {
-      localStorage.setItem(storageKey, newFavorite.toString());
-    }
-
-    setModalMessage(newFavorite ? "Ajouté aux favoris !" : "Supprimé des favoris !");
-    setShowFavoriteModal(true);
-    setTimeout(() => setShowFavoriteModal(false), 1500);
-
     try {
+      const newFavorite = !isFavorite;
       const response = await fetch(`http://localhost:5001/api/favorites`, {
         method: newFavorite ? 'POST' : 'DELETE',
         headers: {
@@ -118,12 +109,24 @@ export default function BookCard({ book, isAuthenticated, currentUser, onRequire
       });
 
       if (!response.ok) {
-        throw new Error('Erreur lors de la mise à jour des favoris');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur lors de la mise à jour des favoris');
+      }
+
+      // Si la requête a réussi, mettre à jour l'état local
+      setIsFavorite(newFavorite);
+      setModalMessage(newFavorite ? "Ajouté aux favoris !" : "Supprimé des favoris !");
+      setShowFavoriteModal(true);
+      setTimeout(() => setShowFavoriteModal(false), 1500);
+
+      if (storageKey) {
+        localStorage.setItem(storageKey, newFavorite.toString());
       }
     } catch (error) {
       console.error(error);
-      setIsFavorite(!newFavorite);
-      setShowFavoriteModal(false);
+      setModalMessage(error.message);
+      setShowFavoriteModal(true);
+      setTimeout(() => setShowFavoriteModal(false), 1500);
     }
   };
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import api from '../services/api';
 import axios from 'axios';
 import { Plus, X, Upload, Loader } from 'react-feather';
 import './AddBook.css';
@@ -27,11 +28,16 @@ const EditBook = () => {
     availability: 'Disponible'
   });
 
+
+  const countWords = (text) => {
+    return text.trim().split(/\s+/).filter(Boolean).length;
+  };
+
   useEffect(() => {
     const fetchBookData = async () => {
       setIsLoading(true);
       try {
-        const { data } = await axios.get(`${API_URL}/api/books/${id}`);
+        const { data } = await api.get(`/books/${id}`);
         const book = data.book;
         
         setFormData({
@@ -43,12 +49,11 @@ const EditBook = () => {
           description: book.description,
           availability: book.availability
         });
-
         if (book.images && book.images.length > 0) {
-          setExistingImages(book.images.map(img => ({
-            url: img.startsWith('/uploads') ? `${API_URL}${img}` : `${API_URL}/uploads/${img}`,
-            path: img
-          })));
+                setExistingImages(book.images.map(img => ({
+                  url: img.startsWith('/uploads') ? `${API_URL}${img}` : `${API_URL}/uploads/${img}`,
+                  path: img
+                })));
         }
       } catch (err) {
         setError("Erreur lors du chargement du livre");
@@ -67,10 +72,6 @@ const EditBook = () => {
       });
     };
   }, [images]);
-
-  const countWords = (text) => {
-    return text.trim().split(/\s+/).filter(Boolean).length;
-  };
 
   const handleDragEnter = (e) => {
     e.preventDefault();
@@ -157,15 +158,9 @@ const EditBook = () => {
 
     const requiredFields = ['title', 'author', 'category', 'condition', 'location', 'description', 'availability'];
     const missingFields = requiredFields.filter(field => !formData[field]?.trim());
-  
+
     if (missingFields.length > 0) {
       setError('Veuillez remplir tous les champs obligatoires');
-      setIsSubmitting(false);
-      return;
-    }
-  
-    if (images.length === 0 && existingImages.length === 0) {
-      setError('Veuillez ajouter au moins une image');
       setIsSubmitting(false);
       return;
     }
@@ -176,10 +171,15 @@ const EditBook = () => {
         formDataToSend.append(key, value.trim());
       });
 
-      images.forEach(({ file }) => formDataToSend.append('images', file));
-      existingImages.forEach(image => formDataToSend.append('existingImages', image.path));
+      // Envoyer toutes les images existantes
+      existingImages.forEach((image) => {
+        formDataToSend.append('existingImages', image.path);
+      });
 
-      await axios.put(`${API_URL}/api/books/${id}`, formDataToSend, {
+      // Ajouter les nouvelles images
+      images.forEach(({ file }) => formDataToSend.append('images', file));
+
+      await api.put(`/books/${id}`, formDataToSend, {
         headers: { 'Content-Type': 'multipart/form-data' },
         withCredentials: true
       });

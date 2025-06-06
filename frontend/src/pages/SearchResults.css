@@ -60,6 +60,25 @@
   grid-column: 1/-1;
 }
 
+.sr-title {
+  color: #34495e;
+  font-size: 2.2rem;
+  margin: 50px 0;
+  text-align: center;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  gap: 15px; /* Ajout d'un espace entre l'icône et le texte */
+}
+
+.search-icon {
+  width: 1.5em;
+  height: 1.5em;
+  color: #4e9a5e; /* Couleur qui correspond au dégradé des lignes */
+}
+
 @media (max-width: 1350px) {
   .sr-book-list {
     grid-template-columns: repeat(4, minmax(200px, 1fr));

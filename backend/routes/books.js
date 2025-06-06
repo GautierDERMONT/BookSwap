@@ -300,32 +300,42 @@ router.put('/:id', authenticate, upload.array('images', 3), async (req, res) => 
       [title, author, category, condition, location, description, availability, bookId]
     );
 
-    const existingImages = req.body.existingImages 
-      ? Array.isArray(req.body.existingImages) 
-        ? req.body.existingImages 
-        : [req.body.existingImages]
-      : [];
+    // Récupérer toutes les images existantes envoyées depuis le frontend
+    const existingImages = Array.isArray(req.body.existingImages) 
+      ? req.body.existingImages 
+      : req.body.existingImages 
+        ? [req.body.existingImages] 
+        : [];
 
+    // Récupérer les images actuelles de la base de données
     const [currentImages] = await pool.query(
       'SELECT image_path FROM book_images WHERE book_id = ?',
       [bookId]
     );
 
-    currentImages.forEach(async (img) => {
-      if (!existingImages.includes(img.image_path)) {
-        const fullPath = path.join(__dirname, '../uploads', path.basename(img.image_path));
-        if (fs.existsSync(fullPath)) {
-          fs.unlinkSync(fullPath);
-        }
-        await pool.query(
-          'DELETE FROM book_images WHERE book_id = ? AND image_path = ?',
-          [bookId, img.image_path]
-        );
-      }
-    });
+    // Identifier les images à supprimer (celles qui ne sont plus dans existingImages)
+    const imagesToDelete = currentImages.filter(
+      img => !existingImages.includes(img.image_path)
+    );
 
+    // Supprimer les images physiquement et de la base de données
+    for (const img of imagesToDelete) {
+      const imageName = path.basename(img.image_path);
+      const fullPath = path.join(__dirname, '../uploads', imageName);
+      if (fs.existsSync(fullPath)) {
+        fs.unlinkSync(fullPath);
+      }
+      await pool.query(
+        'DELETE FROM book_images WHERE book_id = ? AND image_path = ?',
+        [bookId, img.image_path]
+      );
+    }
+
+    // Ajouter les nouvelles images
     if (req.files && req.files.length > 0) {
-      const images = req.files.map(file => ({ path: file.filename }));
+      const images = req.files.map(file => ({ 
+        path: `/uploads/${file.filename}` 
+      }));
       await Book.addImages(bookId, images);
     }
 
