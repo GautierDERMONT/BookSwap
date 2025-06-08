@@ -25,6 +25,33 @@ const getImageUrl = (img) => {
   return img.startsWith('/uploads/') ? `${API_URL}${img}` : `${API_URL}/uploads/${img}`;
 };
 
+const getDefaultAvatar = (username) => {
+  if (!username) return <FaUser size={16} />;
+
+  const firstLetter = username.charAt(0).toUpperCase();
+  const colors = ['#FF5733', '#33FF57', '#3357FF', '#F333FF', '#33FFF3'];
+  const color = colors[firstLetter.charCodeAt(0) % colors.length];
+
+  return (
+    <div 
+      style={{
+        backgroundColor: color,
+        width: '32px',
+        height: '32px',
+        borderRadius: '50%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'white',
+        fontSize: '1rem',
+        fontWeight: 'bold'
+      }}
+    >
+      {firstLetter}
+    </div>
+  );
+};
+
 const BookDetails = ({ currentUser, executeAfterAuth }) => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -266,9 +293,7 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
                         }}
                       />
                     ) : (
-                      <div className="book-details-default-avatar">
-                        {book.username?.charAt(0).toUpperCase() || 'A'}
-                      </div>
+                      getDefaultAvatar(book.username)
                     )}
                     <span>{book.username || 'Anonyme'}</span>
                   </Link>
@@ -290,7 +315,8 @@ const BookDetails = ({ currentUser, executeAfterAuth }) => {
               </p>
               
               <p>
-                <strong><FaMapMarkerAlt className="meta-icon" />Localisation</strong>                <span className="book-details-meta-value">
+                <strong><FaMapMarkerAlt className="meta-icon" />Localisation</strong>
+                <span className="book-details-meta-value">
                   {book.location || 'Non spécifié'}
                 </span>
               </p>

@@ -39,7 +39,12 @@ export default function FavoritesPage({ currentUser }) {
           favorites.map(book => (
             <BookCard
               key={book.id}
-              book={book}
+              book={{
+                ...book,
+                user_id: book.user_id || book.users_id, 
+                username: book.username, 
+                avatar: book.avatar, 
+              }}
               isAuthenticated={true}
               currentUser={currentUser}
               onRequireLogin={() => {}}

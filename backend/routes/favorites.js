@@ -59,7 +59,7 @@ router.delete('/favorites', async (req, res) => {
   }
 });
 
-// Récupérer tous les favoris d’un utilisateur avec images
+// Récupérer tous les favoris d'un utilisateur avec images et infos du propriétaire
 router.get('/favorites/:userId', async (req, res) => {
   const { userId } = req.params;
 
@@ -67,9 +67,13 @@ router.get('/favorites/:userId', async (req, res) => {
     const query = `
       SELECT 
         b.*,
+        u.id as user_id,
+        u.username,
+        u.avatar,
         (SELECT GROUP_CONCAT(image_path ORDER BY id ASC) FROM book_images WHERE book_id = b.id) AS images
       FROM favorites f
       JOIN book b ON f.book_id = b.id
+      JOIN users u ON b.users_id = u.id
       WHERE f.user_id = ?
       GROUP BY b.id
     `;
@@ -82,7 +86,6 @@ router.get('/favorites/:userId', async (req, res) => {
         ? row.images
             .split(',')
             .map(img => {
-              // Nettoyer le chemin en supprimant les doublons
               const cleanPath = img.trim().replace(/^\/uploads\//, '');
               return `/uploads/${cleanPath}`;
             })

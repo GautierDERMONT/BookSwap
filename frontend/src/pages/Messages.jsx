@@ -26,6 +26,7 @@ const Messages = ({ currentUser }) => {
     const colors = ['#FF5733', '#33FF57', '#3357FF', '#F333FF', '#33FFF3'];
     const color = colors[firstLetter.charCodeAt(0) % colors.length];
     
+    
     return (
       <div style={{
         backgroundColor: color,
@@ -37,7 +38,8 @@ const Messages = ({ currentUser }) => {
         justifyContent: 'center',
         color: 'white',
         fontSize: '1rem',
-        fontWeight: 'bold'
+        fontWeight: 'bold',
+        cursor: 'pointer'
       }}>
         {firstLetter}
       </div>
@@ -247,8 +249,15 @@ const Messages = ({ currentUser }) => {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Vérification du type de fichier
     if (!file.type.match('image.*')) {
       alert('Seules les images sont autorisées');
+      return;
+    }
+
+    // Vérification de la taille (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('La taille maximale autorisée est de 5MB');
       return;
     }
 
@@ -343,27 +352,9 @@ const Messages = ({ currentUser }) => {
                       e.stopPropagation();
                       handleProfileClick(conv.interlocutor_id);
                     }}
-                    style={{ cursor: 'pointer' }}
                   />
                 ) : (
-                  <div 
-                    className="message-conv-avatar" 
-                    style={{ 
-                      backgroundColor: '#FF5733', 
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white',
-                      fontWeight: 'bold',
-                      cursor: 'pointer'
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleProfileClick(conv.interlocutor_id);
-                    }}
-                  >
-                    {conv.interlocutor_name?.charAt(0).toUpperCase() || 'U'}
-                  </div>
+                  getDefaultAvatar(conv.interlocutor_name)
                 )}
                 <div className="message-conv-info">
                   <div className="message-conv-header">
@@ -411,37 +402,27 @@ const Messages = ({ currentUser }) => {
                   
                   return (
                     <div key={msg.id} className={`message-wrapper ${msg.sender_id === currentUser.id ? 'sent' : 'received'}`}>
-                      {showAvatar && (msg.sender_avatar ? (
-                        <img 
-                          src={`http://localhost:5001${msg.sender_avatar}`}
-                          alt={`Avatar de ${msg.sender_name}`}
-                          className="message-sender-avatar"
+                      {showAvatar && (
+                        <div    className="message-avatar-container"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleProfileClick(msg.sender_id);
-                          }}
-                          style={{ cursor: 'pointer' }}
-                        />
-                      ) : (
-                        <div 
-                          className="message-sender-avatar" 
-                          style={{ 
-                            backgroundColor: '#FF5733', 
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'white',
-                            fontWeight: 'bold',
-                            cursor: 'pointer'
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleProfileClick(msg.sender_id);
-                          }}
-                        >
-                          {msg.sender_name?.charAt(0).toUpperCase() || 'U'}
+                          }}>
+                          {msg.sender_avatar ? (
+                            <img 
+                              src={`http://localhost:5001${msg.sender_avatar}`}
+                              alt={`Avatar de ${msg.sender_name}`}
+                              className="message-sender-avatar"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleProfileClick(msg.sender_id);
+                              }}
+                            />
+                          ) : (
+                            getDefaultAvatar(msg.sender_name)
+                          )}
                         </div>
-                      ))}
+                      )}
                       <div className={`message-bubble ${msg.sender_id === currentUser.id ? 'sent' : 'received'}`}>
                         <div className="message-content">
                           {msg.image_url ? (
@@ -451,7 +432,6 @@ const Messages = ({ currentUser }) => {
                               className="message-image"
                               onClick={() => window.open(`http://localhost:5001${msg.image_url}`, '_blank')}
                             />
-
                           ) : (
                             <p>{msg.content}</p>
                           )}
@@ -557,34 +537,27 @@ const Messages = ({ currentUser }) => {
               <p>{currentBook.description || 'Aucune description disponible.'}</p>
             </div>
             
-            <div className="message-book-publisher">
-              <h4>Publié par :</h4>
-              <div className="publisher-content">
-                {currentBook?.avatar ? (
-                  <img 
-                    src={`http://localhost:5001${currentBook.avatar}`}
-                    alt={`Avatar de ${currentBook?.user?.username || 'utilisateur'}`}
-                    className="message-book-publisher-avatar"
-                    onClick={() => handleProfileClick(currentBook?.user?.id)}
-                    style={{ cursor: 'pointer' }}
-                  />
-                ) : (
-                  <div 
-                    onClick={() => handleProfileClick(currentBook?.user?.id)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    {getDefaultAvatar(currentBook?.user?.username)}
-                  </div>
-                )}
-                <p 
-                  className="publisher-name"
+              <div className="message-book-publisher">
+                <h4>Publié par :</h4>
+                <div 
+                  className="publisher-content"
                   onClick={() => handleProfileClick(currentBook?.user?.id)}
                   style={{ cursor: 'pointer' }}
                 >
-                  {selectedConversation?.publisher_name || currentBook?.user?.username || 'Non spécifié'}
-                </p>
+                  {currentBook?.avatar ? (
+                    <img 
+                      src={`http://localhost:5001${currentBook.avatar}`}
+                      alt={`Avatar de ${currentBook?.user?.username || 'utilisateur'}`}
+                      className="message-book-publisher-avatar"
+                    />
+                  ) : (
+                    getDefaultAvatar(currentBook?.user?.username)
+                  )}
+                  <p className="publisher-name">
+                    {selectedConversation?.publisher_name || currentBook?.user?.username || 'Non spécifié'}
+                  </p>
+                </div>
               </div>
-            </div>
           </div>
         </div>
       )}
