@@ -1,44 +1,49 @@
-const { pool } = require('../config/db'); // Connexion à la base de données via pool
+const { pool } = require('../config/db');
 
-// Objet Favorites gérant l'ajout, suppression et récupération des favoris d'un utilisateur
 const Favorites = {
+  checkExisting: async (userId, bookId) => {
+    const [existing] = await pool.query(
+      'SELECT * FROM favorites WHERE user_id = ? AND book_id = ?',
+      [userId, bookId]
+    );
+    return existing.length > 0;
+  },
 
-  // Ajoute un livre aux favoris d'un utilisateur
   add: async (userId, bookId) => {
-    const sql = 'INSERT INTO favorites (user_id, book_id) VALUES (?, ?)';
-    try {
-      const [result] = await pool.query(sql, [userId, bookId]);
-      return result;
-    } catch (error) {
-      throw error;
-    }
+    await pool.query(
+      'INSERT INTO favorites (user_id, book_id) VALUES (?, ?)',
+      [userId, bookId]
+    );
   },
 
-  // Supprime un livre des favoris d'un utilisateur
   remove: async (userId, bookId) => {
-    const sql = 'DELETE FROM favorites WHERE user_id = ? AND book_id = ?';
-    try {
-      const [result] = await pool.query(sql, [userId, bookId]);
-      return result;
-    } catch (error) {
-      throw error;
-    }
+    await pool.query(
+      'DELETE FROM favorites WHERE user_id = ? AND book_id = ?',
+      [userId, bookId]
+    );
   },
 
-  // Récupère tous les livres favoris d'un utilisateur donné
   getUserFavorites: async (userId) => {
-    const sql = `
-      SELECT book.*
-      FROM favorites
-      JOIN book ON favorites.book_id = book.id
-      WHERE favorites.user_id = ?
+    const query = `
+      SELECT 
+        b.*,
+        u.id as user_id,
+        u.username,
+        u.avatar,
+        (SELECT GROUP_CONCAT(image_path ORDER BY id ASC) FROM book_images WHERE book_id = b.id) AS images
+      FROM favorites f
+      JOIN book b ON f.book_id = b.id
+      JOIN users u ON b.users_id = u.id
+      WHERE f.user_id = ?
+      GROUP BY b.id
     `;
-    try {
-      const [rows] = await pool.query(sql, [userId]);
-      return rows;
-    } catch (error) {
-      throw error;
-    }
+    const [rows] = await pool.query(query, [userId]);
+    return rows.map(row => ({
+      ...row,
+      images: row.images 
+        ? row.images.split(',').map(img => `/uploads/${img.trim().replace(/^\/uploads\//, '')}`).filter(img => img !== '/uploads/') 
+        : []
+    }));
   }
 };
 

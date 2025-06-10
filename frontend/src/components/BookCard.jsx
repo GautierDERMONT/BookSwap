@@ -78,7 +78,6 @@ export default function BookCard({ book, isAuthenticated, currentUser, onRequire
   const imageUrl = useMemo(() => {
     if (book.images && book.images.length > 0) {
       const firstImage = book.images[0];
-      // Nettoyer le chemin en supprimant les doublons de /uploads/
       const cleanPath = firstImage.replace(/^\/uploads\//, '');
       return `http://localhost:5001/uploads/${cleanPath}`;
     }

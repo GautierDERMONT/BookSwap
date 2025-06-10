@@ -3,6 +3,7 @@ import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import api from '../services/api';
 import './Messages.css';
 import { FiMessageSquare, FiChevronRight, FiClock, FiCheck, FiMapPin, FiImage } from 'react-icons/fi';
+import { io } from 'socket.io-client';
 
 const Messages = ({ currentUser }) => {
   const [conversations, setConversations] = useState([]);
@@ -14,6 +15,7 @@ const Messages = ({ currentUser }) => {
   const [interlocutor, setInterlocutor] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [socket, setSocket] = useState(null);
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -25,7 +27,6 @@ const Messages = ({ currentUser }) => {
     const firstLetter = username.charAt(0).toUpperCase();
     const colors = ['#FF5733', '#33FF57', '#3357FF', '#F333FF', '#33FFF3'];
     const color = colors[firstLetter.charCodeAt(0) % colors.length];
-    
     
     return (
       <div style={{
@@ -45,6 +46,27 @@ const Messages = ({ currentUser }) => {
       </div>
     );
   };
+
+  useEffect(() => {
+    const newSocket = io('http://localhost:5001', {
+      withCredentials: true,
+      autoConnect: true
+    });
+    setSocket(newSocket);
+
+    if (currentUser?.id) {
+      newSocket.emit('authenticate', currentUser.id);
+    }
+
+    newSocket.on('newMessage', (message) => {
+      setMessages(prev => [...prev, message]);
+      scrollToBottom();
+    });
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, [currentUser]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -137,19 +159,10 @@ const Messages = ({ currentUser }) => {
   }, [location.state, id]);
 
   useEffect(() => {
-    const interval = setInterval(async () => {
-      if (selectedConversation) {
-        try {
-          const messagesRes = await api.get(`/conversations/${selectedConversation.id}/messages`);
-          setMessages(messagesRes.data.messages || []);
-        } catch (error) {
-          console.error('Error refreshing messages:', error);
-        }
-      }
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, [selectedConversation]);
+    if (selectedConversation && socket) {
+      socket.emit('joinConversation', selectedConversation.id);
+    }
+  }, [selectedConversation, socket]);
 
   useEffect(() => {
     if (selectedConversation) {
@@ -232,14 +245,16 @@ const Messages = ({ currentUser }) => {
     if (!newMessage.trim() || !selectedConversation) return;
 
     try {
-      await api.post(`/conversations/${selectedConversation.id}/messages`, {
-        content: newMessage,
-      });
-
-      const messagesRes = await api.get(`/conversations/${selectedConversation.id}/messages`);
-      setMessages(messagesRes.data.messages || []);
+      if (socket) {
+        socket.emit('sendMessage', {
+          conversationId: selectedConversation.id,
+          senderId: currentUser.id,
+          content: newMessage,
+          isImage: false
+        });
+      }
+      
       setNewMessage('');
-      scrollToBottom();
     } catch (error) {
       console.error('Error sending message:', error);
     }
@@ -249,13 +264,11 @@ const Messages = ({ currentUser }) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Vérification du type de fichier
     if (!file.type.match('image.*')) {
       alert('Seules les images sont autorisées');
       return;
     }
 
-    // Vérification de la taille (5MB max)
     if (file.size > 5 * 1024 * 1024) {
       alert('La taille maximale autorisée est de 5MB');
       return;
@@ -278,17 +291,15 @@ const Messages = ({ currentUser }) => {
       formData.append('image', selectedImage);
       formData.append('conversationId', selectedConversation.id);
 
-      const response = await api.post(`/conversations/${selectedConversation.id}/messages/image`, formData, {
+      // Envoyez seulement la requête HTTP (pas de socket.io ici)
+      await api.post(`/conversations/${selectedConversation.id}/messages/image`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
 
-      const messagesRes = await api.get(`/conversations/${selectedConversation.id}/messages`);
-      setMessages(messagesRes.data.messages || []);
       setSelectedImage(null);
       setImagePreview(null);
-      scrollToBottom();
     } catch (error) {
       console.error('Error sending image:', error);
       alert("Erreur lors de l'envoi de l'image");
@@ -403,7 +414,7 @@ const Messages = ({ currentUser }) => {
                   return (
                     <div key={msg.id} className={`message-wrapper ${msg.sender_id === currentUser.id ? 'sent' : 'received'}`}>
                       {showAvatar && (
-                        <div    className="message-avatar-container"
+                        <div className="message-avatar-container"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleProfileClick(msg.sender_id);

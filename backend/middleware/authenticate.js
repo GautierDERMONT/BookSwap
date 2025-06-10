@@ -20,7 +20,7 @@ module.exports = async (req, res, next) => {
     }
 
     // Vérification et décodage du token avec la clé secrète
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_secret_key');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // Vérifie que le token contient un userId valide
     if (!decoded.userId) {
