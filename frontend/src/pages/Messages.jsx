@@ -31,8 +31,8 @@ const Messages = ({ currentUser }) => {
     return (
       <div style={{
         backgroundColor: color,
-        width: '32px',
-        height: '32px',
+        width: '39px',
+        height: '39px',
         borderRadius: '50%',
         display: 'flex',
         alignItems: 'center',
@@ -48,25 +48,38 @@ const Messages = ({ currentUser }) => {
   };
 
   useEffect(() => {
+    if (!currentUser?.id) return;
+
     const newSocket = io('http://localhost:5001', {
       withCredentials: true,
       autoConnect: true
     });
+    
     setSocket(newSocket);
 
-    if (currentUser?.id) {
-      newSocket.emit('authenticate', currentUser.id);
-    }
+    // Authentification
+    newSocket.emit('authenticate', currentUser.id);
 
-    newSocket.on('newMessage', (message) => {
-      setMessages(prev => [...prev, message]);
+    // Gestion des nouveaux messages
+    newSocket.on('newMessage', (newMsg) => {
+      setMessages(prevMessages => {
+        // Vérifie si le message appartient à la conversation actuelle
+        if (selectedConversation?.id === newMsg.conversation_id) {
+          // Évite les doublons
+          if (!prevMessages.some(msg => msg.id === newMsg.id)) {
+            return [...prevMessages, newMsg];
+          }
+        }
+        return prevMessages;
+      });
       scrollToBottom();
     });
 
     return () => {
+      newSocket.off('newMessage');
       newSocket.disconnect();
     };
-  }, [currentUser]);
+  }, [currentUser?.id, selectedConversation?.id]); // Dépendances importantes
 
   useEffect(() => {
     const fetchData = async () => {
@@ -245,6 +258,7 @@ const Messages = ({ currentUser }) => {
     if (!newMessage.trim() || !selectedConversation) return;
 
     try {
+      // Envoyez uniquement via Socket.io
       if (socket) {
         socket.emit('sendMessage', {
           conversationId: selectedConversation.id,
@@ -269,8 +283,8 @@ const Messages = ({ currentUser }) => {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert('La taille maximale autorisée est de 5MB');
+    if (file.size > 10 * 1024 * 1024) {
+      alert('La taille maximale autorisée est de 10MB');
       return;
     }
 
@@ -289,15 +303,19 @@ const Messages = ({ currentUser }) => {
     try {
       const formData = new FormData();
       formData.append('image', selectedImage);
-      formData.append('conversationId', selectedConversation.id);
 
-      // Envoyez seulement la requête HTTP (pas de socket.io ici)
-      await api.post(`/conversations/${selectedConversation.id}/messages/image`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
+      // Envoyez l'image via l'API REST (nécessaire pour le upload)
+      const response = await api.post(
+        `/conversations/${selectedConversation.id}/messages/image`, 
+        formData, 
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
         }
-      });
+      );
 
+      // Le backend se chargera d'émettre l'événement Socket.io
       setSelectedImage(null);
       setImagePreview(null);
     } catch (error) {

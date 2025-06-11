@@ -6,7 +6,9 @@ class Book {
   static async create(bookData, userId) {
     const query = `
       INSERT INTO book 
-        (title, author, category, \`condition\`, location, description, availability, users_id, created_at) 
+        (title, author, category, \`condition\`
+        , location, description, availability,
+         users_id, created_at) 
       VALUES 
         (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
